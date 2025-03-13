@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/icon.png" alt="JobRefMe Logo" width="128" height="128">
+</p>
+
 # JobRefMe Chrome Extension
 
 A Chrome extension that generates personalized reference request messages for HireJobs.in job postings.

@@ -23,7 +23,10 @@ const Popup: React.FC = () => {
   return (
     <div className="p-4 bg-gray-50 flex flex-col" style={{ height: '600px' }}>
       <header className="mb-4">
-        <h1 className="text-lg font-bold text-gray-900">JobRefMe</h1>
+        <div className="flex items-center gap-2">
+          <img src="/icon.png" alt="JobRefMe Logo" className="w-6 h-6" />
+          <h1 className="text-lg font-bold text-gray-900">JobRefMe</h1>
+        </div>
         <p className="text-xs text-gray-500">Reference Request Generator</p>
       </header>
 
