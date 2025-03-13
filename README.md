@@ -19,7 +19,7 @@ A Chrome extension that generates personalized reference request messages for Hi
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/jobrefme-extension.git
+   git clone https://github.com/Prathmesh-Dhatrak/jobrefme-extension.git
    cd jobrefme-extension
    ```
 
