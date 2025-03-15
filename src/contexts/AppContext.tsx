@@ -3,8 +3,8 @@ import { AppState, AppContextType, ProcessingStatus } from '../types';
 import { useHireJobsDetection } from '../hooks/useHireJobsDetection';
 import {
   validateJobUrl,
-  initiateReferenceGeneration,
-  pollReferenceResult
+  initiateReferralGeneration,
+  pollReferralResult
 } from '../services/apiService';
 
 const initialState: AppState = {
@@ -12,7 +12,7 @@ const initialState: AppState = {
   currentUrl: '',
   status: ProcessingStatus.IDLE,
   error: null,
-  referenceMessage: null,
+  referralMessage: null,
   jobTitle: null,
   companyName: null
 };
@@ -21,7 +21,7 @@ type Action =
   | { type: 'SET_HIREJOBS_STATUS'; payload: { isHireJobsUrl: boolean; currentUrl: string } }
   | { type: 'SET_STATUS'; payload: ProcessingStatus }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_REFERENCE_DATA'; payload: { referenceMessage: string; jobTitle: string; companyName: string } }
+  | { type: 'SET_REFERENCE_DATA'; payload: { referralMessage: string; jobTitle: string; companyName: string } }
   | { type: 'RESET' };
 
 function appReducer(state: AppState, action: Action): AppState {
@@ -47,7 +47,7 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_REFERENCE_DATA':
       return {
         ...state,
-        referenceMessage: action.payload.referenceMessage,
+        referralMessage: action.payload.referralMessage,
         jobTitle: action.payload.jobTitle,
         companyName: action.payload.companyName,
         status: ProcessingStatus.COMPLETED
@@ -98,23 +98,23 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   };
 
   /**
-   * Generates a reference message for a job posting
+   * Generates a referral message for a job posting
    */
-  const generateReference = async (url: string): Promise<void> => {
+  const generateReferral = async (url: string): Promise<void> => {
     try {
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.VALIDATING });
       await validateJobUrl(url);
       
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.GENERATING });
-      await initiateReferenceGeneration(url);
+      await initiateReferralGeneration(url);
 
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.FETCHING });
-      const result = await pollReferenceResult(url);
+      const result = await pollReferralResult(url);
       
       dispatch({
         type: 'SET_REFERENCE_DATA',
         payload: {
-          referenceMessage: result.referenceMessage,
+          referralMessage: result.referralMessage,
           jobTitle: result.jobTitle,
           companyName: result.companyName
         }
@@ -123,7 +123,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     } catch (error) {
       dispatch({ 
         type: 'SET_ERROR', 
-        payload: error instanceof Error ? error.message : 'Failed to generate reference'
+        payload: error instanceof Error ? error.message : 'Failed to generate referral'
       });
     }
   };
@@ -138,7 +138,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   const contextValue: AppContextType = {
     state,
     validateUrl,
-    generateReference,
+    generateReferral,
     reset
   };
 

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 
-interface ReferenceMessageProps {
+interface ReferralMessageProps {
   message: string;
   jobTitle: string;
   companyName: string;
 }
 
-const ReferenceMessage: React.FC<ReferenceMessageProps> = ({
+const ReferralMessage: React.FC<ReferralMessageProps> = ({
   message,
   jobTitle,
   companyName,
@@ -24,7 +24,7 @@ const ReferenceMessage: React.FC<ReferenceMessageProps> = ({
     <div className="mt-4">
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-semibold text-gray-700">
-          Reference Request for {jobTitle} at {companyName}
+          Referral Request for {jobTitle} at {companyName}
         </h3>
         <button
           onClick={handleCopy}
@@ -42,4 +42,4 @@ const ReferenceMessage: React.FC<ReferenceMessageProps> = ({
   );
 };
 
-export default ReferenceMessage;
+export default ReferralMessage;

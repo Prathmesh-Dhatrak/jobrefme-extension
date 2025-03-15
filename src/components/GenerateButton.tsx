@@ -25,8 +25,8 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({ status, isHireJobsUrl, 
       }`}
     >
       {status === ProcessingStatus.COMPLETED
-        ? 'Generate New Reference'
-        : 'Generate Reference Request'}
+        ? 'Generate New Referral'
+        : 'Generate Referral Request'}
     </button>
   );
 };

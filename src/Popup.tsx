@@ -4,11 +4,11 @@ import { ProcessingStatus } from './types';
 import StatusIndicator from './components/StatusIndicator';
 import GenerateButton from './components/GenerateButton';
 import LoadingIndicator from './components/LoadingIndicator';
-import ReferenceMessage from './components/ReferenceMessage';
+import ReferralMessage from './components/ReferralMessage';
 import ErrorDisplay from './components/ErrorDisplay';
 
 const Popup: React.FC = () => {
-  const { state, generateReference, reset } = useAppContext();
+  const { state, generateReferral, reset } = useAppContext();
   
   const handleGenerateClick = () => {
     if (state.isHireJobsUrl && state.currentUrl) {
@@ -16,7 +16,7 @@ const Popup: React.FC = () => {
         // If we already have a result, reset first
         reset();
       }
-      generateReference(state.currentUrl);
+      generateReferral(state.currentUrl);
     }
   };
 
@@ -27,7 +27,7 @@ const Popup: React.FC = () => {
           <img src="/icon.png" alt="JobRefMe Logo" className="w-6 h-6" />
           <h1 className="text-lg font-bold text-gray-900">JobRefMe</h1>
         </div>
-        <p className="text-xs text-gray-500">Reference Request Generator</p>
+        <p className="text-xs text-gray-500">Referral Request Generator</p>
       </header>
 
       <div className="flex-1 flex flex-col">
@@ -42,9 +42,9 @@ const Popup: React.FC = () => {
 
         <LoadingIndicator status={state.status} />
 
-        {state.status === ProcessingStatus.COMPLETED && state.referenceMessage && (
-          <ReferenceMessage
-            message={state.referenceMessage}
+        {state.status === ProcessingStatus.COMPLETED && state.referralMessage && (
+          <ReferralMessage
+            message={state.referralMessage}
             jobTitle={state.jobTitle || 'Job Position'}
             companyName={state.companyName || 'Company'}
           />

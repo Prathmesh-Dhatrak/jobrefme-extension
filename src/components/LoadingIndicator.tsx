@@ -12,7 +12,7 @@ const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ status }) => {
 
   const messages = {
     [ProcessingStatus.VALIDATING]: 'Validating URL...',
-    [ProcessingStatus.GENERATING]: 'Generating reference...',
+    [ProcessingStatus.GENERATING]: 'Generating referral...',
     [ProcessingStatus.FETCHING]: 'Retrieving message...',
   };
 

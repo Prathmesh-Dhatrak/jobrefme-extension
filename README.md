@@ -4,12 +4,12 @@
 
 # JobRefMe Chrome Extension
 
-A Chrome extension that generates personalized reference request messages for HireJobs.in job postings.
+A Chrome extension that generates personalized referral request messages for HireJobs.in job postings.
 
 ## Features
 
 - **Automatic Detection**: Automatically detects when you're on a HireJobs job posting page
-- **One-Click Generation**: Generate a reference request with a single click
+- **One-Click Generation**: Generate a referral request with a single click
 - **Smart Templates**: Creates personalized messages that highlight relevant skills for each job
 - **Copy to Clipboard**: Easily copy the generated message with one click
 
@@ -48,7 +48,7 @@ A Chrome extension that generates personalized reference request messages for Hi
 
 1. Navigate to a job posting on HireJobs.in (e.g., https://hirejobs.in/jobs/abc123)
 2. Click on the JobRefMe extension icon in your browser toolbar
-3. Click the "Generate Reference Request" button
+3. Click the "Generate Referral Request" button
 4. Once the message is generated, click "Copy" to copy it to your clipboard
 5. Use the message in your emails or messages to request a referral
 

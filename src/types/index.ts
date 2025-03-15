@@ -5,7 +5,7 @@ export interface UrlValidationResponse {
     cached: boolean;
 }
 
-export interface ReferenceInitResponse {
+export interface ReferralInitResponse {
     success: boolean;
     status: string;
     message: string;
@@ -13,9 +13,10 @@ export interface ReferenceInitResponse {
     estimatedTime: string;
 }
 
-export interface ReferenceResultResponse {
+export interface ReferralResultResponse {
     success: boolean;
-    referenceMessage: string;
+    status?: 'processing' | 'completed';
+    referralMessage: string;
     jobTitle: string;
     companyName: string;
     jobId: string;
@@ -42,7 +43,7 @@ export interface AppState {
     currentUrl: string;
     status: ProcessingStatus;
     error: string | null;
-    referenceMessage: string | null;
+    referralMessage: string | null;
     jobTitle: string | null;
     companyName: string | null;
 }
@@ -50,6 +51,6 @@ export interface AppState {
 export interface AppContextType {
     state: AppState;
     validateUrl: (url: string) => Promise<void>;
-    generateReference: (url: string) => Promise<void>;
+    generateReferral: (url: string) => Promise<void>;
     reset: () => void;
 }

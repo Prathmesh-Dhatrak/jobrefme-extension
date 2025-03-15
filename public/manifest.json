@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "JobRefMe - Reference Request Generator",
-    "description": "Generate personalized job reference request messages from HireJobs.in postings",
+    "name": "JobRefMe - Referral Request Generator",
+    "description": "Generate personalized job referral request messages from HireJobs.in postings",
     "version": "1.0.0",
     "icons": {
       "16": "icon-16.png",

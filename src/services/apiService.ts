@@ -1,87 +1,81 @@
-import { UrlValidationResponse, ReferenceInitResponse, ReferenceResultResponse, ErrorResponse } from '../types';
+import axios from 'axios';
+import { UrlValidationResponse, ReferralInitResponse, ReferralResultResponse } from '../types';
 
-const API_BASE_URL = 'https://jobrefme-backend.fly.dev/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 /**
  * Validates if a job URL is valid and accessible
  */
 export async function validateJobUrl(jobUrl: string): Promise<UrlValidationResponse> {
-  const response = await fetch(`${API_BASE_URL}/url/validate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ jobUrl }),
-  });
-
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error((data as ErrorResponse).error || 'Failed to validate URL');
+  try {
+    const { data } = await api.post<UrlValidationResponse>('/validate-job-url', { jobUrl });
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to validate URL: ${error.response?.data?.error || error.message}`);
+    }
+    throw new Error('Failed to validate URL: Unknown error');
   }
-  
-  return data as UrlValidationResponse;
 }
 
 /**
- * Initiates the reference generation process
+ * Initiates the referral generation process
  */
-export async function initiateReferenceGeneration(jobUrl: string): Promise<ReferenceInitResponse> {
-  const response = await fetch(`${API_BASE_URL}/reference`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ jobUrl }),
-  });
-
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error((data as ErrorResponse).error || 'Failed to initiate reference generation');
+export async function initiateReferralGeneration(jobUrl: string): Promise<ReferralInitResponse> {
+  try {
+    const { data } = await api.post<ReferralInitResponse>('/generate-referral', { jobUrl });
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to initiate referral generation: ${error.response?.data?.error || error.message}`);
+    }
+    throw new Error('Failed to initiate referral generation: Unknown error');
   }
-  
-  return data as ReferenceInitResponse;
 }
 
 /**
- * Fetches the generated reference message
+ * Fetches the generated referral message
  */
-export async function fetchReferenceResult(jobUrl: string): Promise<ReferenceResultResponse> {
-  const response = await fetch(`${API_BASE_URL}/reference/result`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ jobUrl }),
-  });
-
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error((data as ErrorResponse).error || 'Failed to fetch reference result');
+export async function fetchReferralResult(jobUrl: string): Promise<ReferralResultResponse> {
+  try {
+    const { data } = await api.post<ReferralResultResponse>('/generate-referral/result', { jobUrl });
+    
+    if (data.status === 'processing') {
+      throw new Error('PROCESSING');
+    }
+    
+    return data;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'PROCESSING') {
+      throw error;
+    }
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to fetch referral result: ${error.response?.data?.error || error.message}`);
+    }
+    throw new Error('Failed to fetch referral result: Unknown error');
   }
-  
-  if (data.status === 'processing') {
-    throw new Error('PROCESSING');
-  }
-  
-  return data as ReferenceResultResponse;
 }
 
 /**
- * Polls for the reference result until it's available
+ * Polls for the referral result until it's available
  */
-export async function pollReferenceResult(
+export async function pollReferralResult(
   jobUrl: string, 
   maxAttempts = 10,
   interval = 1500
-): Promise<ReferenceResultResponse> {
+): Promise<ReferralResultResponse> {
   let attempts = 0;
   
   while (attempts < maxAttempts) {
     try {
-      const result = await fetchReferenceResult(jobUrl);
+      const result = await fetchReferralResult(jobUrl);
       return result;
     } catch (error) {
       if (error instanceof Error && error.message === 'PROCESSING') {
@@ -93,5 +87,5 @@ export async function pollReferenceResult(
     }
   }
   
-  throw new Error('Timed out waiting for reference result');
+  throw new Error('Timed out waiting for referral result');
 }

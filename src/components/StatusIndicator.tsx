@@ -19,7 +19,7 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isHireJobsUrl }) => {
         ></div>
         <p className="text-sm">
           {isHireJobsUrl
-            ? 'Ready to generate reference request'
+            ? 'Ready to generate referral request'
             : 'Not on a HireJobs job posting page'}
         </p>
       </div>
