@@ -4,15 +4,28 @@ import { ProcessingStatus } from '../types';
 interface GenerateButtonProps {
   status: ProcessingStatus;
   isHireJobsUrl: boolean;
+  isApiKeyConfigured: boolean;
   onClick: () => void;
 }
 
-const GenerateButton: React.FC<GenerateButtonProps> = ({ status, isHireJobsUrl, onClick }) => {
+const GenerateButton: React.FC<GenerateButtonProps> = ({ 
+  status, 
+  isHireJobsUrl, 
+  isApiKeyConfigured,
+  onClick 
+}) => {
   const isLoading = status === ProcessingStatus.VALIDATING || 
                    status === ProcessingStatus.GENERATING || 
                    status === ProcessingStatus.FETCHING;
   
-  const isDisabled = !isHireJobsUrl || isLoading;
+  const isDisabled = !isHireJobsUrl || isLoading || !isApiKeyConfigured;
+  
+  let buttonText = "Generate Referral Request";
+  if (status === ProcessingStatus.COMPLETED) {
+    buttonText = "Generate New Referral";
+  } else if (!isApiKeyConfigured) {
+    buttonText = "API Key Required";
+  }
   
   return (
     <button
@@ -24,9 +37,7 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({ status, isHireJobsUrl, 
           : 'bg-primary-600 text-white hover:bg-primary-700'
       }`}
     >
-      {status === ProcessingStatus.COMPLETED
-        ? 'Generate New Referral'
-        : 'Generate Referral Request'}
+      {buttonText}
     </button>
   );
 };

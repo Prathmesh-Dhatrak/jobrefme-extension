@@ -1,35 +1,53 @@
 {
-    "manifest_version": 3,
-    "name": "JobRefMe - Referral Request Generator",
-    "description": "Generate personalized job referral request messages from HireJobs.in postings",
-    "version": "1.0.0",
-    "icons": {
+  "manifest_version": 3,
+  "name": "JobRefMe - Referral Request Generator",
+  "description": "Generate personalized job referral request messages from HireJobs.in postings",
+  "version": "1.0.0",
+  "icons": {
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
       "16": "icon-16.png",
       "32": "icon-32.png",
       "48": "icon-48.png",
       "128": "icon-128.png"
-    },
-    "action": {
-      "default_popup": "index.html",
-      "default_icon": {
-        "16": "icon-16.png",
-        "32": "icon-32.png",
-        "48": "icon-48.png",
-        "128": "icon-128.png"
-      }
-    },
-    "permissions": [
-      "activeTab",
-      "storage",
-      "scripting"
-    ],
-    "host_permissions": [
-      "https://hirejobs.in/*"
-    ],
-    "content_scripts": [
-      {
-        "matches": ["https://hirejobs.in/jobs/*"],
-        "js": ["src/content.tsx"]
-      }
-    ]
-  }
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://hirejobs.in/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://hirejobs.in/jobs/*"],
+      "js": ["src/content.tsx"]
+    }
+  ],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "welcome.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

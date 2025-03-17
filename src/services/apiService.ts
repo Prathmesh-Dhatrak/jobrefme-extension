@@ -13,9 +13,9 @@ const api = axios.create({
 /**
  * Validates if a job URL is valid and accessible
  */
-export async function validateJobUrl(jobUrl: string): Promise<UrlValidationResponse> {
+export async function validateJobUrl(jobUrl: string, apiKey: string): Promise<UrlValidationResponse> {
   try {
-    const { data } = await api.post<UrlValidationResponse>('/validate-job-url', { jobUrl });
+    const { data } = await api.post<UrlValidationResponse>('/validate-job-url', { jobUrl, apiKey });
     return data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -28,9 +28,9 @@ export async function validateJobUrl(jobUrl: string): Promise<UrlValidationRespo
 /**
  * Initiates the referral generation process
  */
-export async function initiateReferralGeneration(jobUrl: string): Promise<ReferralInitResponse> {
+export async function initiateReferralGeneration(jobUrl: string, apiKey: string): Promise<ReferralInitResponse> {
   try {
-    const { data } = await api.post<ReferralInitResponse>('/generate-referral', { jobUrl });
+    const { data } = await api.post<ReferralInitResponse>('/generate-referral', { jobUrl, apiKey });
     return data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -43,9 +43,9 @@ export async function initiateReferralGeneration(jobUrl: string): Promise<Referr
 /**
  * Fetches the generated referral message
  */
-export async function fetchReferralResult(jobUrl: string): Promise<ReferralResultResponse> {
+export async function fetchReferralResult(jobUrl: string, apiKey: string): Promise<ReferralResultResponse> {
   try {
-    const { data } = await api.post<ReferralResultResponse>('/generate-referral/result', { jobUrl });
+    const { data } = await api.post<ReferralResultResponse>('/generate-referral/result', { jobUrl, apiKey });
     
     if (data.status === 'processing') {
       throw new Error('PROCESSING');
@@ -68,6 +68,7 @@ export async function fetchReferralResult(jobUrl: string): Promise<ReferralResul
  */
 export async function pollReferralResult(
   jobUrl: string, 
+  apiKey: string,
   maxAttempts = 10,
   interval = 1500
 ): Promise<ReferralResultResponse> {
@@ -75,7 +76,7 @@ export async function pollReferralResult(
   
   while (attempts < maxAttempts) {
     try {
-      const result = await fetchReferralResult(jobUrl);
+      const result = await fetchReferralResult(jobUrl, apiKey);
       return result;
     } catch (error) {
       if (error instanceof Error && error.message === 'PROCESSING') {

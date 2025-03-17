@@ -11,7 +11,7 @@ export default defineConfig({
     crx({ manifest }),
   ],
   css: {
-    postcss: './postcss.config.js', // Make sure this points to your PostCSS config
+    postcss: './postcss.config.js',
   },
   resolve: {
     alias: {
@@ -22,7 +22,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        welcome: resolve(__dirname, 'welcome.html'),
+        options: resolve(__dirname, 'options.html'),
         content: resolve(__dirname, 'src/content.tsx'),
+        background: resolve(__dirname, 'src/background.ts'),
       },
     },
     cssCodeSplit: true,

@@ -1,0 +1,90 @@
+import React, { useState } from 'react';
+
+interface ApiKeyFormProps {
+  onApiKeySaved: (apiKey: string) => void;
+  initialApiKey?: string;
+}
+
+const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onApiKeySaved, initialApiKey = '' }) => {
+  const [apiKey, setApiKey] = useState(initialApiKey);
+  const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!apiKey.trim()) {
+      setError('Please enter a Gemini API key');
+      return;
+    }
+
+    if (apiKey.length < 20) {
+      setError('This doesn\'t look like a valid Gemini API key');
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      await chrome.storage.local.set({ geminiApiKey: apiKey });
+      onApiKeySaved(apiKey);
+      setError('');
+    } catch (err) {
+      setError('Failed to save API key');
+      console.error('Error saving API key:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <h2 className="text-lg font-semibold mb-2">Set Your Gemini API Key</h2>
+      <p className="text-sm text-gray-600 mb-3">
+        JobRefMe requires a Google Gemini API key to generate referral messages.
+      </p>
+      
+      <form onSubmit={handleSubmit}>
+        <div className="mb-3">
+          <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
+            Gemini API Key
+          </label>
+          <input
+            type="password"
+            id="apiKey"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="Enter your Gemini API key"
+          />
+          {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            disabled={isSaving}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${
+              isSaving 
+                ? 'bg-gray-300 text-gray-700 cursor-not-allowed' 
+                : 'bg-primary-600 text-white hover:bg-primary-700'
+            }`}
+          >
+            {isSaving ? 'Saving...' : 'Save API Key'}
+          </button>
+          
+          <a 
+            href="https://ai.google.dev/tutorials/setup" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs text-primary-600 hover:text-primary-700"
+          >
+            How to get an API key
+          </a>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default ApiKeyForm;
