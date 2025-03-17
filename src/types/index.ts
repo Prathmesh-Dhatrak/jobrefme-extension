@@ -11,6 +11,7 @@ export interface ReferralInitResponse {
     message: string;
     jobId: string;
     estimatedTime: string;
+    usingCustomApiKey?: boolean;
 }
 
 export interface ReferralResultResponse {
@@ -22,6 +23,7 @@ export interface ReferralResultResponse {
     jobId: string;
     cached: boolean;
     cachedAt?: number;
+    usingCustomApiKey?: boolean;
 }
 
 export interface ErrorResponse {
@@ -46,11 +48,14 @@ export interface AppState {
     referralMessage: string | null;
     jobTitle: string | null;
     companyName: string | null;
+    geminiApiKey: string | null;
+    isApiKeyConfigured: boolean;
 }
 
 export interface AppContextType {
     state: AppState;
     validateUrl: (url: string) => Promise<void>;
     generateReferral: (url: string) => Promise<void>;
+    setApiKey: (apiKey: string) => Promise<void>;
     reset: () => void;
 }

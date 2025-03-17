@@ -1,5 +1,5 @@
+import './index.css';
 import { isHireJobsJobUrl } from './utils/urlUtils';
-import './index.css'; // Make sure this import exists
 
 console.log('JobRefMe: Content script loaded');
 
