@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
+import { useAppContext } from '../contexts/AppContext';
 
 interface ApiKeyFormProps {
-  onApiKeySaved: (apiKey: string) => void;
-  initialApiKey?: string;
+  onSuccess?: () => void;
 }
 
-const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onApiKeySaved, initialApiKey = '' }) => {
-  const [apiKey, setApiKey] = useState(initialApiKey);
+const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSuccess }) => {
+  const { storeGeminiApiKey, state } = useAppContext();
+  const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,18 +26,38 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onApiKeySaved, initialApiKey = 
     }
 
     setIsSaving(true);
+    setError('');
     
     try {
-      await chrome.storage.local.set({ geminiApiKey: apiKey });
-      onApiKeySaved(apiKey);
-      setError('');
+      const success = await storeGeminiApiKey(apiKey);
+      
+      if (success) {
+        setShowSuccess(true);
+        setApiKey('');
+
+        setTimeout(() => {
+          setShowSuccess(false);
+          if (onSuccess) onSuccess();
+        }, 3000);
+      } else {
+        setError('Failed to save API key. Please try again.');
+      }
     } catch (err) {
-      setError('Failed to save API key');
-      console.error('Error saving API key:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to save API key: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
   };
+
+  if (!state.isAuthenticated) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-sm text-amber-700">
+        <p className="font-medium">Authentication Required</p>
+        <p className="mt-1">You need to log in before you can set up your Gemini API key.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -43,6 +65,13 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onApiKeySaved, initialApiKey = 
       <p className="text-sm text-gray-600 mb-3">
         JobRefMe requires a Google Gemini API key to generate referral messages.
       </p>
+      
+      {showSuccess && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
+          <p className="font-medium">Success!</p>
+          <p>Your Gemini API key has been saved securely.</p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit}>
         <div className="mb-3">

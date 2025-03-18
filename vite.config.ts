@@ -24,6 +24,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         welcome: resolve(__dirname, 'welcome.html'),
         options: resolve(__dirname, 'options.html'),
+        authCallback: resolve(__dirname, 'auth-callback.html'),
         content: resolve(__dirname, 'src/content.tsx'),
         background: resolve(__dirname, 'src/background.ts'),
       },

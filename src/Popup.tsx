@@ -7,12 +7,14 @@ import LoadingIndicator from './components/LoadingIndicator';
 import ReferralMessage from './components/ReferralMessage';
 import ErrorDisplay from './components/ErrorDisplay';
 import ApiKeyForm from './components/ApiKeyForm';
+import LoginPage from './pages/LoginPage';
+import UserProfile from './components/UserProfile';
 
 const Popup: React.FC = () => {
-  const { state, generateReferral, reset, setApiKey } = useAppContext();
+  const { state, generateReferral, reset } = useAppContext();
   
   const handleGenerateClick = () => {
-    if (state.isHireJobsUrl && state.currentUrl && state.isApiKeyConfigured) {
+    if (state.isHireJobsUrl && state.currentUrl) {
       if (state.status === ProcessingStatus.COMPLETED) {
         reset();
       }
@@ -20,21 +22,29 @@ const Popup: React.FC = () => {
     }
   };
 
-  const handleOpenOptionsPage = () => {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL('options.html'));
-    }
-  };
+  if (state.isAuthLoading) {
+    return (
+      <div className="p-4 bg-gray-50 flex flex-col items-center justify-center" style={{ width: '360px', minHeight: '400px' }}>
+        <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+        <p className="mt-4 text-sm text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
-  if (!state.isApiKeyConfigured) {
+  if (!state.isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  if (!state.user?.hasGeminiApiKey) {
     return (
       <div className="p-4 bg-gray-50 flex flex-col" style={{ width: '360px', minHeight: '400px' }}>
         <header className="mb-4">
-          <div className="flex items-center gap-2">
-            <img src="/icon.png" alt="JobRefMe Logo" className="w-6 h-6" />
-            <h1 className="text-lg font-bold text-gray-900">JobRefMe</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img src="/icon.png" alt="JobRefMe Logo" className="w-6 h-6" />
+              <h1 className="text-lg font-bold text-gray-900">JobRefMe</h1>
+            </div>
+            <UserProfile />
           </div>
           <p className="text-xs text-gray-500">Referral Request Generator</p>
         </header>
@@ -47,17 +57,11 @@ const Popup: React.FC = () => {
             </p>
           </div>
           
-          <ApiKeyForm onApiKeySaved={setApiKey} />
+          <ApiKeyForm />
         </div>
 
         <footer className="mt-auto text-center text-xs text-gray-400">
           <p>v1.0.0 • Made with ♥ for HireJobs users</p>
-          <button 
-            onClick={handleOpenOptionsPage}
-            className="mt-1 text-primary-600 hover:text-primary-700"
-          >
-            Open Settings
-          </button>
         </footer>
       </div>
     );
@@ -66,9 +70,12 @@ const Popup: React.FC = () => {
   return (
     <div className="p-4 bg-gray-50 flex flex-col" style={{ width: '360px', minHeight: '400px' }}>
       <header className="mb-4">
-        <div className="flex items-center gap-2">
-          <img src="/icon.png" alt="JobRefMe Logo" className="w-6 h-6" />
-          <h1 className="text-lg font-bold text-gray-900">JobRefMe</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/icon.png" alt="JobRefMe Logo" className="w-6 h-6" />
+            <h1 className="text-lg font-bold text-gray-900">JobRefMe</h1>
+          </div>
+          <UserProfile />
         </div>
         <p className="text-xs text-gray-500">Referral Request Generator</p>
       </header>
@@ -98,19 +105,10 @@ const Popup: React.FC = () => {
         <GenerateButton
           status={state.status}
           isHireJobsUrl={state.isHireJobsUrl}
-          isApiKeyConfigured={state.isApiKeyConfigured}
+          isApiKeyConfigured={Boolean(state.user?.hasGeminiApiKey)}
           onClick={handleGenerateClick}
         />
-        
-        <div className="flex justify-center mt-2">
-          <button 
-            onClick={handleOpenOptionsPage}
-            className="text-xs text-primary-600 hover:text-primary-700"
-          >
-            Configure API Key
-          </button>
-        </div>
-        
+                
         <footer className="mt-2 text-center text-xs text-gray-400">
           <p>v1.0.0 • Made with ♥ for HireJobs users</p>
         </footer>

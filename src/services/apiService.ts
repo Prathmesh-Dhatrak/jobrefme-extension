@@ -1,4 +1,5 @@
 import axios from 'axios';
+import authService from './authService';
 import { UrlValidationResponse, ReferralInitResponse, ReferralResultResponse } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -10,12 +11,34 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use(
+  (config) => {
+    const token = authService.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      console.warn('Authentication error, clearing token');
+      chrome.storage.local.remove(['authToken', 'tokenExpiry']);
+    }
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Validates if a job URL is valid and accessible
  */
-export async function validateJobUrl(jobUrl: string, apiKey: string): Promise<UrlValidationResponse> {
+export async function validateJobUrl(jobUrl: string): Promise<UrlValidationResponse> {
   try {
-    const { data } = await api.post<UrlValidationResponse>('/validate-job-url', { jobUrl, apiKey });
+    const { data } = await api.post<UrlValidationResponse>('/validate-job-url', { jobUrl });
     return data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -28,9 +51,9 @@ export async function validateJobUrl(jobUrl: string, apiKey: string): Promise<Ur
 /**
  * Initiates the referral generation process
  */
-export async function initiateReferralGeneration(jobUrl: string, apiKey: string): Promise<ReferralInitResponse> {
+export async function initiateReferralGeneration(jobUrl: string): Promise<ReferralInitResponse> {
   try {
-    const { data } = await api.post<ReferralInitResponse>('/generate-referral', { jobUrl, apiKey });
+    const { data } = await api.post<ReferralInitResponse>('/generate-referral', { jobUrl });
     return data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -43,9 +66,9 @@ export async function initiateReferralGeneration(jobUrl: string, apiKey: string)
 /**
  * Fetches the generated referral message
  */
-export async function fetchReferralResult(jobUrl: string, apiKey: string): Promise<ReferralResultResponse> {
+export async function fetchReferralResult(jobUrl: string): Promise<ReferralResultResponse> {
   try {
-    const { data } = await api.post<ReferralResultResponse>('/generate-referral/result', { jobUrl, apiKey });
+    const { data } = await api.post<ReferralResultResponse>('/generate-referral/result', { jobUrl });
     
     if (data.status === 'processing') {
       throw new Error('PROCESSING');
@@ -67,8 +90,7 @@ export async function fetchReferralResult(jobUrl: string, apiKey: string): Promi
  * Polls for the referral result until it's available
  */
 export async function pollReferralResult(
-  jobUrl: string, 
-  apiKey: string,
+  jobUrl: string,
   maxAttempts = 10,
   interval = 1500
 ): Promise<ReferralResultResponse> {
@@ -76,7 +98,7 @@ export async function pollReferralResult(
   
   while (attempts < maxAttempts) {
     try {
-      const result = await fetchReferralResult(jobUrl, apiKey);
+      const result = await fetchReferralResult(jobUrl);
       return result;
     } catch (error) {
       if (error instanceof Error && error.message === 'PROCESSING') {
@@ -89,4 +111,19 @@ export async function pollReferralResult(
   }
   
   throw new Error('Timed out waiting for referral result');
+}
+
+/**
+ * Clears the referral cache for a specific job URL
+ */
+export async function clearReferralCache(jobUrl: string): Promise<{ success: boolean, message: string }> {
+  try {
+    const { data } = await api.post('/clear-cache', { jobUrl });
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to clear cache: ${error.response?.data?.error || error.message}`);
+    }
+    throw new Error('Failed to clear cache: Unknown error');
+  }
 }

@@ -24,7 +24,8 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://hirejobs.in/*"
+    "https://hirejobs.in/*",
+    "https://jobrefme-backend.fly.dev/*"
   ],
   "content_scripts": [
     {
@@ -43,7 +44,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "welcome.html"
+        "welcome.html",
+        "auth-callback.html"
       ],
       "matches": [
         "<all_urls>"
