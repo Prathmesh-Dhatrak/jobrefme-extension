@@ -9,6 +9,8 @@ import ErrorDisplay from './components/ErrorDisplay';
 import ApiKeyForm from './components/ApiKeyForm';
 import LoginPage from './pages/LoginPage';
 import UserProfile from './components/UserProfile';
+import Footer from './components/Footer';
+import Loading from './components/Loading';
 
 const Popup: React.FC = () => {
   const { state, generateReferral, clearCacheAndRetry, reset } = useAppContext();
@@ -30,9 +32,8 @@ const Popup: React.FC = () => {
 
   if (state.isAuthLoading) {
     return (
-      <div className="p-4 bg-gray-50 flex flex-col items-center justify-center" style={{ width: '360px', minHeight: '400px' }}>
-        <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-        <p className="mt-4 text-sm text-gray-600">Loading...</p>
+      <div className="p-4 bg-gray-50" style={{ width: '360px', minHeight: '400px' }}>
+        <Loading />
       </div>
     );
   }
@@ -66,9 +67,7 @@ const Popup: React.FC = () => {
           <ApiKeyForm />
         </div>
 
-        <footer className="mt-auto text-center text-xs text-gray-400">
-          <p>v1.0.0 • Made with ♥ for HireJobs users</p>
-        </footer>
+        <Footer className="mt-auto" />
       </div>
     );
   }
@@ -116,9 +115,7 @@ const Popup: React.FC = () => {
           onClick={handleGenerateClick}
         />
 
-        <footer className="mt-2 text-center text-xs text-gray-400">
-          <p>v1.0.0 • Made with ♥ for HireJobs users</p>
-        </footer>
+        <Footer className="mt-2" />
       </div>
     </div>
   );
