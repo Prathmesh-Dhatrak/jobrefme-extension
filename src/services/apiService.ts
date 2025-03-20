@@ -51,9 +51,18 @@ export async function validateJobUrl(jobUrl: string): Promise<UrlValidationRespo
 /**
  * Initiates the referral generation process
  */
-export async function initiateReferralGeneration(jobUrl: string): Promise<ReferralInitResponse> {
+export async function initiateReferralGeneration(
+  jobUrl: string, 
+  templateId?: string
+): Promise<ReferralInitResponse> {
   try {
-    const { data } = await api.post<ReferralInitResponse>('/generate-referral', { jobUrl });
+    const payload: any = { jobUrl };
+    
+    if (templateId) {
+      payload.templateId = templateId;
+    }
+    
+    const { data } = await api.post<ReferralInitResponse>('/generate-referral', payload);
     return data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
-import { AppState, AppContextType, ProcessingStatus, UserState } from '../types';
+import { AppState, AppContextType, ProcessingStatus, UserState, Template } from '../types';
 import { useHireJobsDetection } from '../hooks/useHireJobsDetection';
 import {
   validateJobUrl,
@@ -8,6 +8,12 @@ import {
   clearReferralCache
 } from '../services/apiService';
 import authService from '../services/authService';
+import {
+  fetchTemplates as fetchTemplatesApi,
+  createTemplate as createTemplateApi,
+  updateTemplate as updateTemplateApi,
+  deleteTemplate as deleteTemplateApi
+} from '../services/templateService';
 
 const initialState: AppState = {
   isHireJobsUrl: false,
@@ -20,7 +26,11 @@ const initialState: AppState = {
   user: null,
   isAuthenticated: false,
   isAuthLoading: true,
-  errorJobUrl: null
+  errorJobUrl: null,
+  templates: [],
+  isLoadingTemplates: false,
+  templateError: null,
+  selectedTemplateId: null,
 };
 
 type Action =
@@ -30,6 +40,13 @@ type Action =
   | { type: 'SET_REFERENCE_DATA'; payload: { referralMessage: string; jobTitle: string; companyName: string } }
   | { type: 'SET_AUTH_STATUS'; payload: { isAuthenticated: boolean; user: UserState | null } }
   | { type: 'SET_AUTH_LOADING'; payload: boolean }
+  | { type: 'SET_TEMPLATES'; payload: Template[] }
+  | { type: 'SET_LOADING_TEMPLATES'; payload: boolean }
+  | { type: 'SET_TEMPLATE_ERROR'; payload: string | null }
+  | { type: 'ADD_TEMPLATE'; payload: Template }
+  | { type: 'UPDATE_TEMPLATE'; payload: Template }
+  | { type: 'REMOVE_TEMPLATE'; payload: string }
+  | { type: 'SET_SELECTED_TEMPLATE'; payload: string | null }
   | { type: 'RESET' };
 
 function appReducer(state: AppState, action: Action): AppState {
@@ -71,6 +88,46 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         isAuthLoading: action.payload
+      };
+
+    case 'SET_TEMPLATES':
+      return {
+        ...state,
+        templates: action.payload,
+        templateError: null
+      };
+    case 'SET_LOADING_TEMPLATES':
+      return {
+        ...state,
+        isLoadingTemplates: action.payload
+      };
+    case 'SET_TEMPLATE_ERROR':
+      return {
+        ...state,
+        templateError: action.payload
+      };
+    case 'ADD_TEMPLATE':
+      return {
+        ...state,
+        templates: [...state.templates, action.payload]
+      };
+    case 'UPDATE_TEMPLATE':
+      return {
+        ...state,
+        templates: state.templates.map(template =>
+          template._id === action.payload._id ? action.payload : template
+        )
+      };
+    case 'REMOVE_TEMPLATE':
+      return {
+        ...state,
+        templates: state.templates.filter(template => template._id !== action.payload)
+      };
+
+    case 'SET_SELECTED_TEMPLATE':
+      return {
+        ...state,
+        selectedTemplateId: action.payload
       };
     case 'RESET':
       return {
@@ -219,7 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       console.error('Login error:', error);
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
+        payload: {
           message: error instanceof Error ? error.message : 'Failed to login'
         }
       });
@@ -267,7 +324,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       console.error('Error storing API key:', error);
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
+        payload: {
           message: error instanceof Error ? error.message : 'Failed to store API key'
         }
       });
@@ -301,7 +358,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       console.error('Error deleting API key:', error);
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
+        payload: {
           message: error instanceof Error ? error.message : 'Failed to delete API key'
         }
       });
@@ -316,7 +373,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     if (!state.isAuthenticated) {
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
+        payload: {
           message: 'Authentication required. Please log in to continue.'
         }
       });
@@ -335,8 +392,8 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     } catch (error) {
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
-          message: error instanceof Error ? error.message : 'Failed to validate URL' 
+        payload: {
+          message: error instanceof Error ? error.message : 'Failed to validate URL'
         }
       });
     }
@@ -368,7 +425,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
 
     try {
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.GENERATING });
-      await initiateReferralGeneration(url);
+      await initiateReferralGeneration(url, state.selectedTemplateId || undefined);
 
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.FETCHING });
       const result = await pollReferralResult(url);
@@ -383,9 +440,9 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       });
 
     } catch (error) {
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: { 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: {
           message: error instanceof Error ? error.message : 'Failed to generate referral',
           jobUrl: url
         }
@@ -400,7 +457,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     if (!state.isAuthenticated) {
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
+        payload: {
           message: 'Authentication required. Please log in to continue.'
         }
       });
@@ -413,7 +470,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     } catch (error) {
       dispatch({
         type: 'SET_ERROR',
-        payload: { 
+        payload: {
           message: error instanceof Error ? error.message : 'Failed to clear cache'
         }
       });
@@ -432,7 +489,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       });
       return;
     }
-
+  
     if (!state.user?.hasGeminiApiKey) {
       dispatch({
         type: 'SET_ERROR',
@@ -440,17 +497,17 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       });
       return;
     }
-
+  
     try {
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.VALIDATING });
       const clearResult = await clearCache(url);
-
+  
       if (!clearResult) {
         throw new Error('Failed to clear cache for this job URL');
       }
-
+  
       await generateReferral(url);
-
+  
     } catch (error) {
       dispatch({
         type: 'SET_ERROR',
@@ -460,6 +517,145 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
         }
       });
     }
+  };
+
+  /**
+   * Fetch all templates
+   */
+  const fetchTemplates = async (): Promise<void> => {
+    if (!state.isAuthenticated) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: 'Authentication required. Please log in to continue.'
+      });
+      return;
+    }
+
+    try {
+      dispatch({ type: 'SET_LOADING_TEMPLATES', payload: true });
+      const templates = await fetchTemplatesApi();
+      dispatch({ type: 'SET_TEMPLATES', payload: templates });
+    } catch (error) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: error instanceof Error ? error.message : 'Failed to fetch templates'
+      });
+    } finally {
+      dispatch({ type: 'SET_LOADING_TEMPLATES', payload: false });
+    }
+  };
+
+  /**
+   * Create a new template
+   */
+  const createTemplate = async (template: {
+    name: string;
+    content: string;
+    isDefault: boolean;
+  }): Promise<Template | null> => {
+    if (!state.isAuthenticated) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: 'Authentication required. Please log in to continue.'
+      });
+      return null;
+    }
+
+    try {
+      const newTemplate = await createTemplateApi(template);
+      dispatch({ type: 'ADD_TEMPLATE', payload: newTemplate });
+
+      if (newTemplate.isDefault) {
+        dispatch({
+          type: 'SET_TEMPLATES',
+          payload: state.templates.map(t =>
+            t._id !== newTemplate._id ? { ...t, isDefault: false } : t
+          )
+        });
+      }
+
+      return newTemplate;
+    } catch (error) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: error instanceof Error ? error.message : 'Failed to create template'
+      });
+      return null;
+    }
+  };
+
+  /**
+   * Update an existing template
+   */
+  const updateTemplate = async (
+    id: string,
+    template: { name?: string; content?: string; isDefault?: boolean }
+  ): Promise<Template | null> => {
+    if (!state.isAuthenticated) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: 'Authentication required. Please log in to continue.'
+      });
+      return null;
+    }
+
+    try {
+      const updatedTemplate = await updateTemplateApi(id, template);
+      dispatch({ type: 'UPDATE_TEMPLATE', payload: updatedTemplate });
+
+      if (updatedTemplate.isDefault) {
+        dispatch({
+          type: 'SET_TEMPLATES',
+          payload: state.templates.map(t =>
+            t._id !== updatedTemplate._id ? { ...t, isDefault: false } : t
+          )
+        });
+      }
+
+      return updatedTemplate;
+    } catch (error) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: error instanceof Error ? error.message : 'Failed to update template'
+      });
+      return null;
+    }
+  };
+
+  /**
+   * Delete a template
+   */
+  const deleteTemplate = async (id: string): Promise<boolean> => {
+    if (!state.isAuthenticated) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: 'Authentication required. Please log in to continue.'
+      });
+      return false;
+    }
+
+    try {
+      const success = await deleteTemplateApi(id);
+
+      if (success) {
+        dispatch({ type: 'REMOVE_TEMPLATE', payload: id });
+      }
+
+      return success;
+    } catch (error) {
+      dispatch({
+        type: 'SET_TEMPLATE_ERROR',
+        payload: error instanceof Error ? error.message : 'Failed to delete template'
+      });
+      return false;
+    }
+  };
+
+  /**
+  * Sets the selected template
+  */
+  const setSelectedTemplate = (templateId: string | null): void => {
+    dispatch({ type: 'SET_SELECTED_TEMPLATE', payload: templateId });
   };
 
   /**
@@ -486,6 +682,11 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     storeGeminiApiKey,
     deleteGeminiApiKey,
     clearCache,
+    fetchTemplates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
+    setSelectedTemplate,
     reset
   };
 

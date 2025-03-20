@@ -1,3 +1,13 @@
+export interface Template {
+  _id: string;
+  name: string;
+  content: string;
+  isDefault: boolean;
+  userId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UrlValidationResponse {
   success: boolean;
   valid: boolean;
@@ -66,6 +76,10 @@ export interface AppState {
   isAuthenticated: boolean;
   isAuthLoading: boolean;
   errorJobUrl: string | null;
+  templates: Template[];
+  isLoadingTemplates: boolean;
+  templateError: string | null;
+  selectedTemplateId: string | null;
 }
 
 export interface AppContextType {
@@ -79,5 +93,10 @@ export interface AppContextType {
   storeGeminiApiKey: (apiKey: string) => Promise<boolean>;
   deleteGeminiApiKey: () => Promise<boolean>;
   clearCache: (url?: string) => Promise<boolean>;
+  fetchTemplates: () => Promise<void>;
+  createTemplate: (template: { name: string; content: string; isDefault: boolean }) => Promise<Template | null>;
+  updateTemplate: (id: string, template: { name?: string; content?: string; isDefault?: boolean }) => Promise<Template | null>;
+  deleteTemplate: (id: string) => Promise<boolean>;
+  setSelectedTemplate: (templateId: string | null) => void;
   reset: () => void;
 }

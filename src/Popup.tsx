@@ -11,9 +11,10 @@ import LoginPage from './pages/LoginPage';
 import UserProfile from './components/UserProfile';
 import Footer from './components/Footer';
 import Loading from './components/Loading';
+import TemplateSelector from './components/TemplateSelector';
 
 const Popup: React.FC = () => {
-  const { state, generateReferral, clearCacheAndRetry, reset } = useAppContext();
+  const { state, generateReferral, clearCacheAndRetry, reset, setSelectedTemplate } = useAppContext();
 
   const handleGenerateClick = () => {
     if (state.isHireJobsUrl && state.currentUrl) {
@@ -96,6 +97,16 @@ const Popup: React.FC = () => {
         )}
 
         <LoadingIndicator status={state.status} />
+
+        {state.isHireJobsUrl && state.status === ProcessingStatus.IDLE && (
+          <div className="mb-4">
+            <TemplateSelector
+              selectedTemplateId={state.selectedTemplateId}
+              onSelectTemplate={setSelectedTemplate}
+              disabled={state.status !== ProcessingStatus.IDLE}
+            />
+          </div>
+        )}
 
         {state.status === ProcessingStatus.COMPLETED && state.referralMessage && (
           <ReferralMessage

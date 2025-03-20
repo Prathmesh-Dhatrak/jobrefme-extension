@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../contexts/AppContext';
-import ApiKeyForm from '../components/ApiKeyForm';
 import LoginPage from '../pages/LoginPage';
+import TemplatePage from './TemplatePage';
+import ApiKeyForm from '../components/ApiKeyForm';
 import DangerZone from '../components/DangerZone';
 import Loading from '../components/Loading';
 
@@ -9,6 +10,7 @@ enum SettingsTab {
   API_KEY = 'api-key',
   ACCOUNT = 'account',
   CACHE = 'cache',
+  TEMPLATES = 'templates',
   ABOUT = 'about'
 }
 
@@ -17,6 +19,38 @@ const OptionsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(SettingsTab.API_KEY);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [reloadAttempted, setReloadAttempted] = useState(false);
+
+  useEffect(() => {
+    const checkReloadStatus = async () => {
+      try {
+        const data = await chrome.storage.local.get('optionsReloadTimestamp');
+        const reloadTimestamp = data.optionsReloadTimestamp;
+        
+        const currentTime = Date.now();
+        const reloadNeeded = !reloadTimestamp || (currentTime - reloadTimestamp > 60000);
+        
+        if (reloadNeeded && !reloadAttempted && !state.isAuthLoading) {
+          await chrome.storage.local.set({ optionsReloadTimestamp: currentTime });
+          setReloadAttempted(true);
+          setTimeout(() => {
+            console.log('Reloading options page once...');
+            window.location.reload();
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error checking reload status:', error);
+      }
+    };
+
+    if (!state.isAuthLoading) {
+      setAuthChecked(true);
+      if (!reloadAttempted) {
+        checkReloadStatus();
+      }
+    }
+  }, [state.isAuthLoading, reloadAttempted]);
 
   const showSuccessMessage = (message: string) => {
     setSuccessMessage(message);
@@ -63,7 +97,7 @@ const OptionsPage: React.FC = () => {
     }
   };
 
-  if (state.isAuthLoading) {
+  if (state.isAuthLoading || !authChecked) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <Loading />
@@ -71,7 +105,7 @@ const OptionsPage: React.FC = () => {
     );
   }
 
-  // Show login page if not authenticated
+  // Only show the login page after we've confirmed the user is not authenticated
   if (!state.isAuthenticated) {
     return <LoginPage />;
   }
@@ -101,8 +135,8 @@ const OptionsPage: React.FC = () => {
                     <button
                       onClick={() => setActiveTab(SettingsTab.API_KEY)}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === SettingsTab.API_KEY
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-100'
                         }`}
                     >
                       <div className="flex items-center">
@@ -115,10 +149,26 @@ const OptionsPage: React.FC = () => {
                   </li>
                   <li>
                     <button
+                      onClick={() => setActiveTab(SettingsTab.TEMPLATES)}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === SettingsTab.TEMPLATES
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                        </svg>
+                        Templates
+                      </div>
+                    </button>
+                  </li>
+                  <li>
+                    <button
                       onClick={() => setActiveTab(SettingsTab.ACCOUNT)}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === SettingsTab.ACCOUNT
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-100'
                         }`}
                     >
                       <div className="flex items-center">
@@ -133,8 +183,8 @@ const OptionsPage: React.FC = () => {
                     <button
                       onClick={() => setActiveTab(SettingsTab.CACHE)}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === SettingsTab.CACHE
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-100'
                         }`}
                     >
                       <div className="flex items-center">
@@ -149,8 +199,8 @@ const OptionsPage: React.FC = () => {
                     <button
                       onClick={() => setActiveTab(SettingsTab.ABOUT)}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${activeTab === SettingsTab.ABOUT
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-100'
                         }`}
                     >
                       <div className="flex items-center">
@@ -206,6 +256,11 @@ const OptionsPage: React.FC = () => {
                       <ApiKeyForm />
                     </div>
                   )}
+                </div>
+              )}
+              {activeTab === SettingsTab.TEMPLATES && (
+                <div>
+                  <TemplatePage />
                 </div>
               )}
 
@@ -274,14 +329,15 @@ const OptionsPage: React.FC = () => {
                           onClick={handleClearCache}
                           disabled={isClearing}
                           className={`px-4 py-2 border rounded-md text-sm font-medium ${isClearing
-                              ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
-                              : 'bg-white border-primary-300 text-primary-700 hover:bg-primary-50'
+                            ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed'
+                            : 'bg-white border-primary-300 text-primary-700 hover:bg-primary-50'
                             }`}
                         >
                           {isClearing ? 'Clearing...' : 'Clear Cache'}
                         </button>
                       </div>
-                    </div></div>
+                    </div>
+                  </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                     <div className="flex">
