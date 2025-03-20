@@ -11,14 +11,20 @@ import LoginPage from './pages/LoginPage';
 import UserProfile from './components/UserProfile';
 
 const Popup: React.FC = () => {
-  const { state, generateReferral, reset } = useAppContext();
-  
+  const { state, generateReferral, clearCacheAndRetry, reset } = useAppContext();
+
   const handleGenerateClick = () => {
     if (state.isHireJobsUrl && state.currentUrl) {
       if (state.status === ProcessingStatus.COMPLETED) {
         reset();
+        generateReferral(state.currentUrl);
+        return;
       }
-      generateReferral(state.currentUrl);
+      if (state.status === ProcessingStatus.ERROR && state.errorJobUrl) {
+        clearCacheAndRetry(state.errorJobUrl);
+      } else {
+        generateReferral(state.currentUrl);
+      }
     }
   };
 
@@ -56,7 +62,7 @@ const Popup: React.FC = () => {
               To use JobRefMe, you need to provide a Google Gemini API key.
             </p>
           </div>
-          
+
           <ApiKeyForm />
         </div>
 
@@ -82,10 +88,10 @@ const Popup: React.FC = () => {
 
       <div className="flex-1 flex flex-col">
         <StatusIndicator isHireJobsUrl={state.isHireJobsUrl} />
-        
+
         {state.error && (
-          <ErrorDisplay 
-            message={state.error} 
+          <ErrorDisplay
+            message={state.error}
             onDismiss={reset}
           />
         )}
@@ -106,9 +112,10 @@ const Popup: React.FC = () => {
           status={state.status}
           isHireJobsUrl={state.isHireJobsUrl}
           isApiKeyConfigured={Boolean(state.user?.hasGeminiApiKey)}
+          hasErrorJobUrl={Boolean(state.errorJobUrl)}
           onClick={handleGenerateClick}
         />
-                
+
         <footer className="mt-2 text-center text-xs text-gray-400">
           <p>v1.0.0 • Made with ♥ for HireJobs users</p>
         </footer>

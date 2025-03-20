@@ -5,6 +5,7 @@ interface GenerateButtonProps {
   status: ProcessingStatus;
   isHireJobsUrl: boolean;
   isApiKeyConfigured: boolean;
+  hasErrorJobUrl: boolean;
   onClick: () => void;
 }
 
@@ -12,6 +13,7 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
   status, 
   isHireJobsUrl, 
   isApiKeyConfigured,
+  hasErrorJobUrl,
   onClick 
 }) => {
   const isLoading = status === ProcessingStatus.VALIDATING || 
@@ -23,6 +25,8 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
   let buttonText = "Generate Referral Request";
   if (status === ProcessingStatus.COMPLETED) {
     buttonText = "Generate New Referral";
+  } else if (status === ProcessingStatus.ERROR && hasErrorJobUrl) {
+    buttonText = "Try with Clear Cache";
   } else if (!isApiKeyConfigured) {
     buttonText = "API Key Required";
   }
@@ -34,7 +38,9 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
       className={`w-full px-4 py-2 rounded-md font-medium transition-colors ${
         isDisabled
           ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-          : 'bg-primary-600 text-white hover:bg-primary-700'
+          : status === ProcessingStatus.ERROR && hasErrorJobUrl
+            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-primary-600 text-white hover:bg-primary-700'
       }`}
     >
       {buttonText}
