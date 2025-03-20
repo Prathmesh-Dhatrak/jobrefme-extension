@@ -1,5 +1,7 @@
 import React from 'react';
 import { useAppContext } from '../contexts/AppContext';
+import Footer from '../components/Footer';
+import Loading from '../components/Loading';
 
 const LoginPage: React.FC = () => {
   const { login, state } = useAppContext();
@@ -49,8 +51,7 @@ const LoginPage: React.FC = () => {
             >
               {state.isAuthLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                  <span>Loading...</span>
+                  <Loading />
                 </>
               ) : (
                 <>
@@ -85,9 +86,7 @@ const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      <footer className="mt-8 text-center text-xs text-gray-400">
-        <p>v1.0.0 • Made with ♥ for HireJobs users</p>
-      </footer>
+      <Footer className="mt-8" />
     </div>
   );
 };

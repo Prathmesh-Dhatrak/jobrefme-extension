@@ -5,7 +5,7 @@ const AuthCallback: React.FC = () => {
   const { handleAuthCallback } = useAppContext();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing authentication...');
-  const [isProcessing, setIsProcessing] = useState(false); // Add state to prevent multiple calls
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const processAuth = async () => {

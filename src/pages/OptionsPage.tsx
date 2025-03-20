@@ -3,6 +3,7 @@ import { useAppContext } from '../contexts/AppContext';
 import ApiKeyForm from '../components/ApiKeyForm';
 import LoginPage from '../pages/LoginPage';
 import DangerZone from '../components/DangerZone';
+import Loading from '../components/Loading';
 
 enum SettingsTab {
   API_KEY = 'api-key',
@@ -62,12 +63,10 @@ const OptionsPage: React.FC = () => {
     }
   };
 
-  // Show loading indicator while auth is being initialized
   if (state.isAuthLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-        <p className="mt-4 text-sm text-gray-600">Loading...</p>
+        <Loading />
       </div>
     );
   }
