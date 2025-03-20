@@ -114,7 +114,7 @@ export async function pollReferralResult(
 }
 
 /**
- * Clears the referral cache for a specific job URL
+ * Clears the referral cache for a specific job URL or all cached referrals
  */
 export async function clearReferralCache(jobUrl: string): Promise<{ success: boolean, message: string }> {
   try {

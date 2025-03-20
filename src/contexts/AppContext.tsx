@@ -4,7 +4,8 @@ import { useHireJobsDetection } from '../hooks/useHireJobsDetection';
 import {
   validateJobUrl,
   initiateReferralGeneration,
-  pollReferralResult
+  pollReferralResult,
+  clearReferralCache
 } from '../services/apiService';
 import authService from '../services/authService';
 
@@ -18,13 +19,14 @@ const initialState: AppState = {
   companyName: null,
   user: null,
   isAuthenticated: false,
-  isAuthLoading: true
+  isAuthLoading: true,
+  errorJobUrl: null
 };
 
 type Action =
   | { type: 'SET_HIREJOBS_STATUS'; payload: { isHireJobsUrl: boolean; currentUrl: string } }
   | { type: 'SET_STATUS'; payload: ProcessingStatus }
-  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_ERROR'; payload: { message: string | null; jobUrl?: string | null } }
   | { type: 'SET_REFERENCE_DATA'; payload: { referralMessage: string; jobTitle: string; companyName: string } }
   | { type: 'SET_AUTH_STATUS'; payload: { isAuthenticated: boolean; user: UserState | null } }
   | { type: 'SET_AUTH_LOADING'; payload: boolean }
@@ -47,8 +49,9 @@ function appReducer(state: AppState, action: Action): AppState {
     case 'SET_ERROR':
       return {
         ...state,
-        error: action.payload,
-        status: action.payload ? ProcessingStatus.ERROR : state.status
+        error: action.payload.message,
+        errorJobUrl: action.payload.jobUrl || state.errorJobUrl,
+        status: action.payload.message ? ProcessingStatus.ERROR : state.status
       };
     case 'SET_REFERENCE_DATA':
       return {
@@ -76,7 +79,8 @@ function appReducer(state: AppState, action: Action): AppState {
         currentUrl: state.currentUrl,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        isAuthLoading: state.isAuthLoading
+        isAuthLoading: state.isAuthLoading,
+        errorJobUrl: null
       };
     default:
       return state;
@@ -95,16 +99,16 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       try {
         dispatch({ type: 'SET_AUTH_LOADING', payload: true });
         const isAuthenticated = authService.isAuthenticated();
-        
+
         if (isAuthenticated) {
           const userProfile = await authService.fetchUserProfile();
-          
+
           if (userProfile) {
             console.log('Auth initialized successfully with profile:', userProfile);
-            dispatch({ 
-              type: 'SET_AUTH_STATUS', 
-              payload: { 
-                isAuthenticated: true, 
+            dispatch({
+              type: 'SET_AUTH_STATUS',
+              payload: {
+                isAuthenticated: true,
                 user: {
                   id: userProfile.id,
                   email: userProfile.email,
@@ -118,22 +122,22 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
             });
           } else {
             console.log('Profile fetch failed during auth initialization');
-            dispatch({ 
-              type: 'SET_AUTH_STATUS', 
+            dispatch({
+              type: 'SET_AUTH_STATUS',
               payload: { isAuthenticated: false, user: null }
             });
           }
         } else {
           console.log('User not authenticated during initialization');
-          dispatch({ 
-            type: 'SET_AUTH_STATUS', 
+          dispatch({
+            type: 'SET_AUTH_STATUS',
             payload: { isAuthenticated: false, user: null }
           });
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-        dispatch({ 
-          type: 'SET_AUTH_STATUS', 
+        dispatch({
+          type: 'SET_AUTH_STATUS',
           payload: { isAuthenticated: false, user: null }
         });
       } finally {
@@ -152,7 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     };
 
     chrome.storage.onChanged.addListener(handleStorageChange);
-    
+
     return () => {
       chrome.storage.onChanged.removeListener(handleStorageChange);
     };
@@ -171,17 +175,17 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   const handleAuthCallback = async (token: string): Promise<boolean> => {
     try {
       dispatch({ type: 'SET_AUTH_LOADING', payload: true });
-      
+
       const success = await authService.handleAuthCallback(token);
-      
+
       if (success) {
         const userProfile = await authService.fetchUserProfile();
-        
+
         if (userProfile) {
-          dispatch({ 
-            type: 'SET_AUTH_STATUS', 
-            payload: { 
-              isAuthenticated: true, 
+          dispatch({
+            type: 'SET_AUTH_STATUS',
+            payload: {
+              isAuthenticated: true,
               user: {
                 id: userProfile.id,
                 email: userProfile.email,
@@ -195,7 +199,7 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
           });
         }
       }
-      
+
       return success;
     } catch (error) {
       console.error('Error handling auth callback:', error);
@@ -213,9 +217,11 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
       await authService.login();
     } catch (error) {
       console.error('Login error:', error);
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: error instanceof Error ? error.message : 'Failed to login' 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { 
+          message: error instanceof Error ? error.message : 'Failed to login'
+        }
       });
     }
   };
@@ -226,8 +232,8 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   const logout = async (): Promise<void> => {
     try {
       await authService.logout();
-      dispatch({ 
-        type: 'SET_AUTH_STATUS', 
+      dispatch({
+        type: 'SET_AUTH_STATUS',
         payload: { isAuthenticated: false, user: null }
       });
     } catch (error) {
@@ -241,13 +247,13 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   const storeGeminiApiKey = async (apiKey: string): Promise<boolean> => {
     try {
       const success = await authService.storeGeminiApiKey(apiKey);
-      
+
       if (success && state.user) {
         // Update local user state
-        dispatch({ 
-          type: 'SET_AUTH_STATUS', 
-          payload: { 
-            isAuthenticated: true, 
+        dispatch({
+          type: 'SET_AUTH_STATUS',
+          payload: {
+            isAuthenticated: true,
             user: {
               ...state.user,
               hasGeminiApiKey: true
@@ -255,13 +261,15 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
           }
         });
       }
-      
+
       return success;
     } catch (error) {
       console.error('Error storing API key:', error);
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: error instanceof Error ? error.message : 'Failed to store API key' 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { 
+          message: error instanceof Error ? error.message : 'Failed to store API key'
+        }
       });
       return false;
     }
@@ -273,13 +281,13 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
   const deleteGeminiApiKey = async (): Promise<boolean> => {
     try {
       const success = await authService.deleteGeminiApiKey();
-      
+
       if (success && state.user) {
         // Update local user state
-        dispatch({ 
-          type: 'SET_AUTH_STATUS', 
-          payload: { 
-            isAuthenticated: true, 
+        dispatch({
+          type: 'SET_AUTH_STATUS',
+          payload: {
+            isAuthenticated: true,
             user: {
               ...state.user,
               hasGeminiApiKey: false
@@ -287,13 +295,15 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
           }
         });
       }
-      
+
       return success;
     } catch (error) {
       console.error('Error deleting API key:', error);
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: error instanceof Error ? error.message : 'Failed to delete API key' 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { 
+          message: error instanceof Error ? error.message : 'Failed to delete API key'
+        }
       });
       return false;
     }
@@ -304,26 +314,30 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
    */
   const validateUrl = async (url: string): Promise<void> => {
     if (!state.isAuthenticated) {
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: 'Authentication required. Please log in to continue.' 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { 
+          message: 'Authentication required. Please log in to continue.'
+        }
       });
       return;
     }
 
     try {
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.VALIDATING });
-      
+
       const validationResult = await validateJobUrl(url);
-      
+
       if (!validationResult.valid) {
         throw new Error('This job posting URL is not valid or accessible');
       }
-      
+
     } catch (error) {
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: error instanceof Error ? error.message : 'Failed to validate URL' 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { 
+          message: error instanceof Error ? error.message : 'Failed to validate URL' 
+        }
       });
     }
   };
@@ -333,31 +347,32 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
    */
   const generateReferral = async (url: string): Promise<void> => {
     if (!state.isAuthenticated) {
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: 'Authentication required. Please log in to continue.' 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: {
+          message: 'Authentication required. Please log in to continue.'
+        }
       });
       return;
     }
 
     if (!state.user?.hasGeminiApiKey) {
-      dispatch({ 
-        type: 'SET_ERROR', 
-        payload: 'Gemini API key is required. Please configure it in the settings.' 
+      dispatch({
+        type: 'SET_ERROR',
+        payload: {
+          message: 'Gemini API key is required. Please configure it in the settings.'
+        }
       });
       return;
     }
 
     try {
-      dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.VALIDATING });
-      await validateJobUrl(url);
-      
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.GENERATING });
       await initiateReferralGeneration(url);
 
       dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.FETCHING });
       const result = await pollReferralResult(url);
-      
+
       dispatch({
         type: 'SET_REFERENCE_DATA',
         payload: {
@@ -366,11 +381,83 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
           companyName: result.companyName
         }
       });
-      
+
     } catch (error) {
       dispatch({ 
         type: 'SET_ERROR', 
-        payload: error instanceof Error ? error.message : 'Failed to generate referral'
+        payload: { 
+          message: error instanceof Error ? error.message : 'Failed to generate referral',
+          jobUrl: url
+        }
+      });
+    }
+  };
+
+  /**
+   * Clears the referral cache for a specific job URL or all cached referrals
+   */
+  const clearCache = async (url?: string): Promise<boolean> => {
+    if (!state.isAuthenticated) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { 
+          message: 'Authentication required. Please log in to continue.'
+        }
+      });
+      return false;
+    }
+
+    try {
+      const result = await clearReferralCache(url || "all");
+      return result.success;
+    } catch (error) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { 
+          message: error instanceof Error ? error.message : 'Failed to clear cache'
+        }
+      });
+      return false;
+    }
+  };
+
+  /**
+ * Clears the cache for a specific job URL and attempts to generate a new referral
+ */
+  const clearCacheAndRetry = async (url: string): Promise<void> => {
+    if (!state.isAuthenticated) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { message: 'Authentication required. Please log in to continue.' }
+      });
+      return;
+    }
+
+    if (!state.user?.hasGeminiApiKey) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: { message: 'Gemini API key is required. Please configure it in the settings.' }
+      });
+      return;
+    }
+
+    try {
+      dispatch({ type: 'SET_STATUS', payload: ProcessingStatus.VALIDATING });
+      const clearResult = await clearCache(url);
+
+      if (!clearResult) {
+        throw new Error('Failed to clear cache for this job URL');
+      }
+
+      await generateReferral(url);
+
+    } catch (error) {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: {
+          message: error instanceof Error ? error.message : 'Failed to generate referral',
+          jobUrl: url
+        }
       });
     }
   };
@@ -392,11 +479,13 @@ export function AppProvider({ children }: { children: ReactNode }): JSX.Element 
     state,
     validateUrl,
     generateReferral,
+    clearCacheAndRetry,
     login,
     logout,
     handleAuthCallback,
     storeGeminiApiKey,
     deleteGeminiApiKey,
+    clearCache,
     reset
   };
 
