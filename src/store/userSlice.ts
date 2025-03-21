@@ -5,30 +5,24 @@ import { UserState } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Define the User slice of the store
 export interface UserSlice {
-  // State
   user: UserState | null;
   hasGeminiApiKey: boolean;
   
-  // Actions
   fetchUserProfile: () => Promise<UserState | null>;
   storeGeminiApiKey: (apiKey: string) => Promise<boolean>;
   deleteGeminiApiKey: () => Promise<boolean>;
 }
 
-// Create the user slice
 export const createUserSlice: StateCreator<
   StoreState,
   [],
   [],
   UserSlice
 > = (set, get, _store) => ({
-  // Initial state
   user: null,
   hasGeminiApiKey: false,
   
-  // Fetch the user profile
   fetchUserProfile: async () => {
     const { getAuthToken } = get();
     const token = getAuthToken();
@@ -71,7 +65,6 @@ export const createUserSlice: StateCreator<
       console.error('Error fetching user profile:', error);
       
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        // Handle unauthorized - token might be expired
         get().logout();
       }
       
@@ -80,7 +73,6 @@ export const createUserSlice: StateCreator<
     }
   },
   
-  // Store the Gemini API key
   storeGeminiApiKey: async (apiKey: string) => {
     const { getAuthToken, user } = get();
     const token = getAuthToken();
@@ -102,7 +94,6 @@ export const createUserSlice: StateCreator<
       );
       
       if (data.success) {
-        // Update user state with API key status
         if (user) {
           set({
             user: { ...user, hasGeminiApiKey: true },
@@ -123,7 +114,6 @@ export const createUserSlice: StateCreator<
     }
   },
   
-  // Delete the Gemini API key
   deleteGeminiApiKey: async () => {
     const { getAuthToken, user } = get();
     const token = getAuthToken();
@@ -141,7 +131,6 @@ export const createUserSlice: StateCreator<
       });
       
       if (data.success) {
-        // Update user state to reflect API key deletion
         if (user) {
           set({
             user: { ...user, hasGeminiApiKey: false },

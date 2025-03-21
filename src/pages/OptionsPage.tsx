@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '../contexts/AppContext';
+import { useAuth, useUser, useCache, useUI } from '../hooks/useZustandStore';
 import LoginPage from '../pages/LoginPage';
 import TemplatePage from './TemplatePage';
 import ApiKeyForm from '../components/ApiKeyForm';
@@ -15,12 +15,16 @@ enum SettingsTab {
 }
 
 const OptionsPage: React.FC = () => {
-  const { state, logout, deleteGeminiApiKey, clearCache } = useAppContext();
+  const { isAuthenticated, isAuthLoading, logout } = useAuth();
+  const { user, deleteGeminiApiKey } = useUser();
+  const { clearCache } = useCache();
+  const { setSuccessMessage, successMessage } = useUI();
+  
   const [activeTab, setActiveTab] = useState<SettingsTab>(SettingsTab.API_KEY);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [reloadAttempted, setReloadAttempted] = useState(false);
+  const [localSuccessMessage, setLocalSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const checkReloadStatus = async () => {
@@ -31,7 +35,7 @@ const OptionsPage: React.FC = () => {
         const currentTime = Date.now();
         const reloadNeeded = !reloadTimestamp || (currentTime - reloadTimestamp > 60000);
         
-        if (reloadNeeded && !reloadAttempted && !state.isAuthLoading) {
+        if (reloadNeeded && !reloadAttempted && !isAuthLoading) {
           await chrome.storage.local.set({ optionsReloadTimestamp: currentTime });
           setReloadAttempted(true);
           setTimeout(() => {
@@ -44,17 +48,27 @@ const OptionsPage: React.FC = () => {
       }
     };
 
-    if (!state.isAuthLoading) {
+    if (!isAuthLoading) {
       setAuthChecked(true);
       if (!reloadAttempted) {
         checkReloadStatus();
       }
     }
-  }, [state.isAuthLoading, reloadAttempted]);
+  }, [isAuthLoading, reloadAttempted]);
 
   const showSuccessMessage = (message: string) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(null), 3000);
+    if (setSuccessMessage) {
+      setSuccessMessage(message);
+    } else {
+      setLocalSuccessMessage(message);
+    }
+    setTimeout(() => {
+      if (setSuccessMessage) {
+        setSuccessMessage(null);
+      } else {
+        setLocalSuccessMessage(null);
+      }
+    }, 3000);
   };
 
   const handleLogout = async () => {
@@ -97,7 +111,7 @@ const OptionsPage: React.FC = () => {
     }
   };
 
-  if (state.isAuthLoading || !authChecked) {
+  if (isAuthLoading || !authChecked) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <Loading />
@@ -105,10 +119,11 @@ const OptionsPage: React.FC = () => {
     );
   }
 
-  // Only show the login page after we've confirmed the user is not authenticated
-  if (!state.isAuthenticated) {
+  if (!isAuthenticated) {
     return <LoginPage />;
   }
+
+  const displaySuccessMessage = successMessage || localSuccessMessage;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,9 +134,9 @@ const OptionsPage: React.FC = () => {
           <p className="text-gray-600 mt-1">Configure your extension settings</p>
         </div>
 
-        {successMessage && (
+        {displaySuccessMessage && (
           <div className="mb-6 p-3 bg-green-100 text-green-700 rounded-md max-w-xl mx-auto">
-            {successMessage}
+            {displaySuccessMessage}
           </div>
         )}
 
@@ -221,7 +236,7 @@ const OptionsPage: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-semibold mb-4">API Key Settings</h2>
 
-                  {state.user?.hasGeminiApiKey ? (
+                  {user?.hasGeminiApiKey ? (
                     <div>
                       <div className="p-4 bg-green-50 border border-green-200 rounded-md mb-4">
                         <div className="flex items-center">
@@ -268,23 +283,23 @@ const OptionsPage: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-semibold mb-4">Account Information</h2>
 
-                  {state.user && (
+                  {user && (
                     <div>
                       <div className="flex items-center mb-6 p-4 bg-gray-50 rounded-md border border-gray-200">
-                        {state.user.profilePicture ? (
+                        {user.profilePicture ? (
                           <img
-                            src={state.user.profilePicture}
-                            alt={state.user.displayName}
+                            src={user.profilePicture}
+                            alt={user.displayName}
                             className="w-16 h-16 rounded-full mr-4"
                           />
                         ) : (
                           <div className="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-xl font-medium mr-4">
-                            {state.user.displayName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            {user.displayName.split(' ').map(n => n[0]).join('').toUpperCase()}
                           </div>
                         )}
                         <div>
-                          <h3 className="font-medium text-lg">{state.user.displayName}</h3>
-                          <p className="text-gray-500">{state.user.email}</p>
+                          <h3 className="font-medium text-lg">{user.displayName}</h3>
+                          <p className="text-gray-500">{user.email}</p>
                         </div>
                       </div>
 

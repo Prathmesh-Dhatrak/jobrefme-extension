@@ -1,24 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { Template } from '../types';
-import { useAppContext } from '../contexts/AppContext';
+import { useAuth, useUser, useTemplates } from '../hooks/useZustandStore';
 
 interface TemplateSelectorProps {
-  selectedTemplateId: string | null;
-  onSelectTemplate: (templateId: string) => void;
+  selectedTemplateId?: string | null;
+  onSelectTemplate?: (templateId: string) => void;
   disabled?: boolean;
+  useStoreValues?: boolean;
 }
 
 const TemplateSelector: React.FC<TemplateSelectorProps> = ({
-  selectedTemplateId,
+  selectedTemplateId: propSelectedTemplateId,
   onSelectTemplate,
-  disabled = false
+  disabled = false,
+  useStoreValues = true
 }) => {
-  const { state, fetchTemplates } = useAppContext();
+  const { isAuthenticated } = useAuth();
+  const { hasGeminiApiKey } = useUser();
+  const { 
+    templates, 
+    isLoadingTemplates, 
+    selectedTemplateId: storeSelectedTemplateId,
+    fetchTemplates,
+    setSelectedTemplate: storeSetSelectedTemplate
+  } = useTemplates();
+  
   const [isLoading, setIsLoading] = useState(false);
+  
+  const selectedTemplateId = useStoreValues 
+    ? storeSelectedTemplateId 
+    : propSelectedTemplateId;
+  
+  const setSelectedTemplate = useStoreValues 
+    ? storeSetSelectedTemplate
+    : (onSelectTemplate || (() => {}));
 
   useEffect(() => {
     const loadTemplates = async () => {
-      if (state.templates.length === 0 && !state.isLoadingTemplates) {
+      if (templates.length === 0 && !isLoadingTemplates) {
         setIsLoading(true);
         try {
           await fetchTemplates();
@@ -30,26 +49,26 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       }
     };
 
-    if (state.isAuthenticated && state.user?.hasGeminiApiKey) {
+    if (isAuthenticated && hasGeminiApiKey) {
       loadTemplates();
     }
-  }, [state.isAuthenticated, state.user?.hasGeminiApiKey, state.templates.length, state.isLoadingTemplates, fetchTemplates]);
+  }, [isAuthenticated, hasGeminiApiKey, templates.length, isLoadingTemplates, fetchTemplates]);
 
   useEffect(() => {
-    if (!selectedTemplateId && state.templates.length > 0 && !isLoading) {
-      const defaultTemplate: Template | undefined = state.templates.find((t: Template) => t.isDefault);
+    if (!selectedTemplateId && templates.length > 0 && !isLoading) {
+      const defaultTemplate: Template | undefined = templates.find((t: Template) => t.isDefault);
       if (defaultTemplate) {
-        onSelectTemplate(defaultTemplate._id);
+        setSelectedTemplate(defaultTemplate._id);
       } else {
-        onSelectTemplate(state.templates[0]._id);
+        setSelectedTemplate(templates[0]._id);
       }
     }
-  }, [selectedTemplateId, state.templates, isLoading, onSelectTemplate]);
+  }, [selectedTemplateId, templates, isLoading, setSelectedTemplate]);
 
-  if (state.templates.length === 0) {
+  if (templates.length === 0) {
     return (
       <div className="text-sm text-gray-500 italic">
-        {isLoading || state.isLoadingTemplates 
+        {isLoading || isLoadingTemplates 
           ? 'Loading templates...' 
           : 'No templates available. Please create one in settings.'}
       </div>
@@ -64,11 +83,11 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
       <select
         id="template-select"
         value={selectedTemplateId || ''}
-        onChange={(e) => onSelectTemplate(e.target.value)}
-        disabled={disabled || isLoading || state.isLoadingTemplates}
+        onChange={(e) => setSelectedTemplate(e.target.value)}
+        disabled={disabled || isLoading || isLoadingTemplates}
         className="w-full p-2 border border-gray-300 rounded text-sm bg-white focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
       >
-        {state.templates.map((template: Template) => (
+        {templates.map((template: Template) => (
           <option key={template._id} value={template._id}>
             {template.name} {template.isDefault ? '(Default)' : ''}
           </option>

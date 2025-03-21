@@ -1,5 +1,5 @@
 import axios from 'axios';
-import authService from './authService';
+import { getStoreState } from '../store';
 import { Template } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -13,7 +13,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = authService.getToken();
+    const state = getStoreState();
+    const token = state.getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

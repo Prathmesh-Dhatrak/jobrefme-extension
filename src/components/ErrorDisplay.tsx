@@ -1,11 +1,21 @@
 import React from 'react';
+import { useUI } from '../hooks/useZustandStore';
 
 interface ErrorDisplayProps {
-  message: string | null;
+  message?: string | null;
   onDismiss?: () => void;
+  useStoreError?: boolean;
 }
 
-const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, onDismiss }) => {
+const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ 
+  message: propMessage, 
+  onDismiss,
+  useStoreError = false 
+}) => {
+  const { error } = useUI();
+  
+  const message = useStoreError ? error : propMessage;
+  
   if (!message) return null;
 
   return (

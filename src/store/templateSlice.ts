@@ -5,15 +5,12 @@ import { Template } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Define the Template slice of the store
 export interface TemplateSlice {
-  // State
   templates: Template[];
   isLoadingTemplates: boolean;
   templateError: string | null;
   selectedTemplateId: string | null;
   
-  // Actions
   fetchTemplates: () => Promise<void>;
   createTemplate: (template: { name: string; content: string; isDefault: boolean }) => Promise<Template | null>;
   updateTemplate: (id: string, template: { name?: string; content?: string; isDefault?: boolean }) => Promise<Template | null>;
@@ -21,20 +18,17 @@ export interface TemplateSlice {
   setSelectedTemplate: (templateId: string | null) => void;
 }
 
-// Create the template slice
 export const createTemplateSlice: StateCreator<
   StoreState,
   [],
   [],
   TemplateSlice
 > = (set, get, _store) => ({
-  // Initial state
   templates: [],
   isLoadingTemplates: false,
   templateError: null,
   selectedTemplateId: null,
   
-  // Fetch all templates
   fetchTemplates: async () => {
     const { getAuthToken, isAuthenticated } = get();
     
@@ -59,7 +53,6 @@ export const createTemplateSlice: StateCreator<
       const templates = response.data.data || [];
       set({ templates });
       
-      // If there's no selected template and we have templates, select the default one
       const { selectedTemplateId } = get();
       if (!selectedTemplateId && templates.length > 0) {
         const defaultTemplate = templates.find((t: Template) => t.isDefault);
@@ -79,7 +72,6 @@ export const createTemplateSlice: StateCreator<
     }
   },
   
-  // Create a new template
   createTemplate: async (template: { name: string; content: string; isDefault: boolean }) => {
     const { getAuthToken, isAuthenticated } = get();
     
@@ -104,11 +96,9 @@ export const createTemplateSlice: StateCreator<
       
       const newTemplate = response.data.data;
       
-      // Update templates in state
       set(state => {
         const updatedTemplates = [...state.templates];
         
-        // If this is a default template, remove default status from others
         if (template.isDefault) {
           updatedTemplates.forEach(t => {
             if (t._id !== newTemplate._id) {
@@ -117,7 +107,6 @@ export const createTemplateSlice: StateCreator<
           });
         }
         
-        // Add the new template
         updatedTemplates.push(newTemplate);
         
         return { templates: updatedTemplates };
@@ -133,8 +122,7 @@ export const createTemplateSlice: StateCreator<
       set({ isLoadingTemplates: false });
     }
   },
-  
-  // Update an existing template
+
   updateTemplate: async (id: string, template: { name?: string; content?: string; isDefault?: boolean }) => {
     const { getAuthToken, isAuthenticated } = get();
     
@@ -159,14 +147,12 @@ export const createTemplateSlice: StateCreator<
       
       const updatedTemplate = response.data.data;
       
-      // Update templates in state
       set(state => {
         const updatedTemplates = state.templates.map(t => {
           if (t._id === id) {
             return updatedTemplate;
           }
           
-          // If this template is now the default, update others accordingly
           if (template.isDefault && updatedTemplate.isDefault && t._id !== id) {
             return { ...t, isDefault: false };
           }
@@ -188,7 +174,6 @@ export const createTemplateSlice: StateCreator<
     }
   },
   
-  // Delete a template
   deleteTemplate: async (id: string) => {
     const { getAuthToken, isAuthenticated } = get();
     
@@ -211,11 +196,9 @@ export const createTemplateSlice: StateCreator<
       );
       
       if (response.data.success) {
-        // Remove deleted template from state
         set(state => {
           const updatedTemplates = state.templates.filter(t => t._id !== id);
           
-          // If the deleted template was selected, select another one
           let updatedSelectedId = state.selectedTemplateId;
           if (updatedSelectedId === id && updatedTemplates.length > 0) {
             const defaultTemplate = updatedTemplates.find(t => t.isDefault);
@@ -244,7 +227,6 @@ export const createTemplateSlice: StateCreator<
     }
   },
   
-  // Set the selected template
   setSelectedTemplate: (templateId: string | null) => {
     set({ selectedTemplateId: templateId });
   }

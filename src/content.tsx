@@ -1,10 +1,14 @@
 import './index.css';
 import { isHireJobsJobUrl } from './utils/urlUtils';
+import { getStoreState } from './store';
 
 console.log('JobRefMe: Content script loaded');
 
 const currentUrl = window.location.href;
 const isHireJobsPage = isHireJobsJobUrl(currentUrl);
+
+const store = getStoreState();
+store.setUrlStatus(isHireJobsPage, currentUrl);
 
 if (isHireJobsPage) {
   console.log('JobRefMe: HireJobs job posting detected');

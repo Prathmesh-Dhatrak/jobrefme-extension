@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '../hooks/useZustandStore';
 
 const AuthCallback: React.FC = () => {
-  const { handleAuthCallback } = useAppContext();
+  const { handleAuthCallback } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Processing authentication...');
   const [isProcessing, setIsProcessing] = useState(false);

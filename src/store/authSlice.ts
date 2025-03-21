@@ -5,15 +5,12 @@ import { UserState } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Define the Auth slice of the store
 export interface AuthSlice {
-  // State
   isAuthenticated: boolean;
   authToken: string | null;
   tokenExpiry: number | null;
   isAuthLoading: boolean;
   
-  // Actions
   login: () => Promise<void>;
   logout: () => Promise<void>;
   handleAuthCallback: (token: string) => Promise<boolean>;
@@ -21,26 +18,22 @@ export interface AuthSlice {
   getAuthToken: () => string | null;
 }
 
-// Create the auth slice
 export const createAuthSlice: StateCreator<
   StoreState,
   [],
   [],
   AuthSlice
 > = (set, get, _store) => ({
-  // Initial state
   isAuthenticated: false,
   authToken: null,
   tokenExpiry: null,
   isAuthLoading: false,
   
-  // Helper to check if current auth is valid
   checkAuthStatus: () => {
     const { authToken, tokenExpiry } = get();
     return Boolean(authToken && tokenExpiry && Date.now() < tokenExpiry);
   },
   
-  // Get the current auth token
   getAuthToken: () => {
     const { authToken, tokenExpiry } = get();
     if (!authToken || !tokenExpiry || Date.now() >= tokenExpiry) {
@@ -49,7 +42,6 @@ export const createAuthSlice: StateCreator<
     return authToken;
   },
   
-  // Login action - starts the OAuth flow
   login: async () => {
     try {
       set({ isAuthLoading: true });
@@ -68,21 +60,18 @@ export const createAuthSlice: StateCreator<
     }
   },
   
-  // Handle the OAuth callback
   handleAuthCallback: async (token: string) => {
     try {
       set({ isAuthLoading: true });
       
       const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
       
-      // Store the token and expiry
       set({
         authToken: token,
         tokenExpiry: expiresAt,
         isAuthenticated: true
       });
       
-      // Fetch the user profile
       const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -102,7 +91,6 @@ export const createAuthSlice: StateCreator<
           hasGeminiApiKey: userData.hasApiKey || userData.hasGeminiApiKey
         };
         
-        // Update user state in the store
         set({ 
           user: userProfile,
           hasGeminiApiKey: userProfile.hasGeminiApiKey 
@@ -114,7 +102,6 @@ export const createAuthSlice: StateCreator<
       return false;
     } catch (error) {
       console.error('Error handling auth callback:', error);
-      // Reset auth state on error
       set({
         authToken: null,
         tokenExpiry: null,
@@ -127,10 +114,8 @@ export const createAuthSlice: StateCreator<
     }
   },
   
-  // Logout action
   logout: async () => {
     try {
-      // Clear authentication state
       set({
         authToken: null,
         tokenExpiry: null,
@@ -138,7 +123,6 @@ export const createAuthSlice: StateCreator<
         user: null
       });
       
-      // Additional cleanup if needed
       await chrome.storage.local.remove(['authToken', 'tokenExpiry', 'user']);
     } catch (error) {
       console.error('Error during logout:', error);

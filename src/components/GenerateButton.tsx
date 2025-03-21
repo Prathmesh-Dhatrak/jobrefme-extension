@@ -1,21 +1,32 @@
 import React from 'react';
 import { ProcessingStatus } from '../types';
+import { useJobProcessing, useUser } from '../hooks/useZustandStore';
 
 interface GenerateButtonProps {
-  status: ProcessingStatus;
-  isHireJobsUrl: boolean;
-  isApiKeyConfigured: boolean;
-  hasErrorJobUrl: boolean;
+  status?: ProcessingStatus;
+  isHireJobsUrl?: boolean;
+  isApiKeyConfigured?: boolean;
+  hasErrorJobUrl?: boolean;
   onClick: () => void;
+  useStoreValues?: boolean;
 }
 
 const GenerateButton: React.FC<GenerateButtonProps> = ({ 
-  status, 
-  isHireJobsUrl, 
-  isApiKeyConfigured,
-  hasErrorJobUrl,
-  onClick 
+  status: propStatus, 
+  isHireJobsUrl: propIsHireJobsUrl, 
+  isApiKeyConfigured: propIsApiKeyConfigured,
+  hasErrorJobUrl: propHasErrorJobUrl,
+  onClick,
+  useStoreValues = true
 }) => {
+  const { status: storeStatus, isHireJobsUrl: storeIsHireJobsUrl, errorJobUrl } = useJobProcessing();
+  const { hasGeminiApiKey } = useUser();
+  
+  const status = useStoreValues ? storeStatus : propStatus || ProcessingStatus.IDLE;
+  const isHireJobsUrl = useStoreValues ? storeIsHireJobsUrl : propIsHireJobsUrl || false;
+  const isApiKeyConfigured = useStoreValues ? hasGeminiApiKey : propIsApiKeyConfigured || false;
+  const hasErrorJobUrl = useStoreValues ? Boolean(errorJobUrl) : propHasErrorJobUrl || false;
+  
   const isLoading = status === ProcessingStatus.VALIDATING || 
                    status === ProcessingStatus.GENERATING || 
                    status === ProcessingStatus.FETCHING;

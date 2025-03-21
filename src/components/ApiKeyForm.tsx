@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../contexts/AppContext';
+import { useAuth, useUser, useUI } from '../hooks/useZustandStore';
 
 interface ApiKeyFormProps {
   onSuccess?: () => void;
 }
 
 const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSuccess }) => {
-  const { storeGeminiApiKey, state } = useAppContext();
+  const { isAuthenticated } = useAuth();
+  const { storeGeminiApiKey } = useUser();
+  const { error, setError } = useUI();
+  
   const [apiKey, setApiKey] = useState('');
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -16,17 +19,18 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSuccess }) => {
     e.preventDefault();
     
     if (!apiKey.trim()) {
-      setError('Please enter a Gemini API key');
+      setLocalError('Please enter a Gemini API key');
       return;
     }
 
     if (apiKey.length < 20) {
-      setError('This doesn\'t look like a valid Gemini API key');
+      setLocalError('This doesn\'t look like a valid Gemini API key');
       return;
     }
 
     setIsSaving(true);
-    setError('');
+    setLocalError('');
+    setError(null);
     
     try {
       const success = await storeGeminiApiKey(apiKey);
@@ -40,17 +44,17 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSuccess }) => {
           if (onSuccess) onSuccess();
         }, 3000);
       } else {
-        setError('Failed to save API key. Please try again.');
+        setLocalError('Failed to save API key. Please try again.');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(`Failed to save API key: ${errorMessage}`);
+      setLocalError(`Failed to save API key: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (!state.isAuthenticated) {
+  if (!isAuthenticated) {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-sm text-amber-700">
         <p className="font-medium">Authentication Required</p>
@@ -86,7 +90,8 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({ onSuccess }) => {
             className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
             placeholder="Enter your Gemini API key"
           />
-          {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+          {localError && <p className="text-red-500 text-xs mt-1">{localError}</p>}
+          {error && !localError && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>
         
         <div className="flex items-center gap-2">

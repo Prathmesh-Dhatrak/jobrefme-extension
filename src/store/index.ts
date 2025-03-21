@@ -7,10 +7,8 @@ import { createTemplateSlice, TemplateSlice } from './templateSlice';
 import { createUISlice, UISlice } from './uiSlice';
 import { chromeStorageMiddleware } from './chromeStorage';
 
-// Define the store type combining all slices
 export type StoreState = AuthSlice & UserSlice & JobSlice & TemplateSlice & UISlice;
 
-// Create the store with all slices and middleware
 export const useStore = create<StoreState>()(
   devtools(
     chromeStorageMiddleware((set, get, store) => ({
@@ -24,5 +22,4 @@ export const useStore = create<StoreState>()(
   )
 );
 
-// Export a helper to get the store state without hooks (useful for background scripts)
 export const getStoreState = () => useStore.getState();

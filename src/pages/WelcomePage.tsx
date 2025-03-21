@@ -1,13 +1,14 @@
 import React from 'react';
-import { useAppContext } from '../contexts/AppContext';
+import { useAuth, useUser } from '../hooks/useZustandStore';
 import ApiKeyForm from '../components/ApiKeyForm';
 import LoginPage from './LoginPage';
 import Loading from '../components/Loading';
 
 const WelcomePage: React.FC = () => {
-  const { state } = useAppContext();
+  const { isAuthenticated, isAuthLoading } = useAuth();
+  const { user } = useUser();
 
-  if (state.isAuthLoading) {
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <Loading />
@@ -15,7 +16,7 @@ const WelcomePage: React.FC = () => {
     );
   }
 
-  if (!state.isAuthenticated) {
+  if (!isAuthenticated) {
     return <LoginPage />;
   }
 
@@ -43,8 +44,8 @@ const WelcomePage: React.FC = () => {
               </p>
             </div>
             
-            <div className={`flex items-center gap-2 p-3 ${state.user?.hasGeminiApiKey ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'} border rounded-md mb-4`}>
-              {state.user?.hasGeminiApiKey ? (
+            <div className={`flex items-center gap-2 p-3 ${user?.hasGeminiApiKey ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'} border rounded-md mb-4`}>
+              {user?.hasGeminiApiKey ? (
                 <>
                   <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -65,7 +66,7 @@ const WelcomePage: React.FC = () => {
               )}
             </div>
             
-            {!state.user?.hasGeminiApiKey && (
+            {!user?.hasGeminiApiKey && (
               <div className="mb-4">
                 <p className="text-sm text-gray-700 mb-4">
                   JobRefMe uses Google's Gemini AI to create tailored referral messages. You'll need to provide your Gemini API key to use this extension.
@@ -79,7 +80,7 @@ const WelcomePage: React.FC = () => {
               </div>
             )}
             
-            {state.user?.hasGeminiApiKey && (
+            {user?.hasGeminiApiKey && (
               <div className="text-center mt-4">
                 <p className="text-sm text-gray-700 mb-4">
                   You're all set! JobRefMe is ready to generate personalized referral requests.

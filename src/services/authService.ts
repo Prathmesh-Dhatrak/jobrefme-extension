@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getStoreState } from '../store';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -52,6 +53,17 @@ class AuthService {
    * Get the stored authentication token
    */
   getToken(): string | null {
+    try {
+      const state = getStoreState();
+      const token = state.getAuthToken?.();
+      if (token) {
+        return token;
+      }
+    } catch (e) {
+      console.log('Using local auth token instead of store');
+    }
+    
+    // Fallback to local token
     if (!this.authToken || Date.now() >= this.authToken.expiresAt) {
       return null;
     }
@@ -62,6 +74,16 @@ class AuthService {
    * Check if the user is authenticated with a valid token
    */
   isAuthenticated(): boolean {
+    try {
+      const state = getStoreState();
+      if (typeof state.checkAuthStatus === 'function') {
+        return state.checkAuthStatus();
+      }
+    } catch (e) {
+      console.log('Using local auth check instead of store');
+    }
+    
+    // Fallback to local check
     return Boolean(this.getToken());
   }
 
@@ -69,6 +91,14 @@ class AuthService {
    * Get user profile if authenticated
    */
   getUserProfile(): UserProfile | null {
+    try {
+      const state = getStoreState();
+      if (state.user) {
+        return state.user;
+      }
+    } catch (e) {
+      console.log('Using local user profile instead of store');
+    }
     return this.userProfile;
   }
 
@@ -92,7 +122,7 @@ class AuthService {
       const userData = response.data?.data || response.data?.user || response.data;
       
       if (userData) {
-        this.userProfile = {
+        const userProfile = {
           id: userData.id,
           email: userData.email,
           displayName: userData.displayName,
@@ -103,6 +133,18 @@ class AuthService {
           lastLogin: userData.lastLogin,
           createdAt: userData.createdAt
         };
+        
+        this.userProfile = userProfile;
+        
+        try {
+          const state = getStoreState();
+          if (state.fetchUserProfile) {
+            state.fetchUserProfile();
+          }
+        } catch (e) {
+          console.log('Error setting user profile in store');
+        }
+        
         return this.userProfile;
       }
       return null;
@@ -120,6 +162,14 @@ class AuthService {
    */
   async handleAuthCallback(token: string): Promise<boolean> {
     try {
+      try {
+        const state = getStoreState();
+        if (state.handleAuthCallback) {
+          return await state.handleAuthCallback(token);
+        }
+      } catch (e) {
+        console.log('Using local auth callback handling instead of store');
+      }
       const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
       
       this.authToken = { token, expiresAt };
@@ -159,6 +209,15 @@ class AuthService {
    * Log out the user and clear auth data
    */
   async logout(): Promise<void> {
+    try {
+      const state = getStoreState();
+      if (state.logout) {
+        await state.logout();
+        return;
+      }
+    } catch (e) {
+      console.log('Using local logout instead of store');
+    }
     this.authToken = null;
     this.userProfile = null;
     await chrome.storage.local.remove(['authToken', 'tokenExpiry']);
@@ -169,6 +228,15 @@ class AuthService {
    * Start the Google OAuth flow
    */
   async login(): Promise<void> {
+    try {
+      const state = getStoreState();
+      if (state.login) {
+        await state.login();
+        return;
+      }
+    } catch (e) {
+      console.log('Using local login instead of store');
+    }
     try {
       const callbackUrl = chrome.runtime.getURL('auth-callback.html');
       
@@ -184,6 +252,14 @@ class AuthService {
    * Check if the user has a stored Gemini API key
    */
   async hasGeminiApiKey(): Promise<boolean> {
+    try {
+      const state = getStoreState();
+      if (state.hasGeminiApiKey !== undefined) {
+        return state.hasGeminiApiKey;
+      }
+    } catch (e) {
+      console.log('Using local API key check instead of store');
+    }
     if (!this.isAuthenticated()) {
       return false;
     }
@@ -206,6 +282,14 @@ class AuthService {
    * Store a Gemini API key on the server
    */
   async storeGeminiApiKey(apiKey: string): Promise<boolean> {
+    try {
+      const state = getStoreState();
+      if (state.storeGeminiApiKey) {
+        return await state.storeGeminiApiKey(apiKey);
+      }
+    } catch (e) {
+      console.log('Using local API key storage instead of store');
+    }
     if (!this.isAuthenticated()) {
       throw new Error('Authentication required');
     }
@@ -238,6 +322,14 @@ class AuthService {
    * Delete the stored Gemini API key from the server
    */
   async deleteGeminiApiKey(): Promise<boolean> {
+    try {
+      const state = getStoreState();
+      if (state.deleteGeminiApiKey) {
+        return await state.deleteGeminiApiKey();
+      }
+    } catch (e) {
+      console.log('Using local API key deletion instead of store');
+    }
     if (!this.isAuthenticated()) {
       throw new Error('Authentication required');
     }

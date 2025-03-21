@@ -5,9 +5,7 @@ import { ProcessingStatus } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// Define the Job slice of the store
 export interface JobSlice {
-  // State
   isHireJobsUrl: boolean;
   currentUrl: string;
   status: ProcessingStatus;
@@ -16,7 +14,6 @@ export interface JobSlice {
   companyName: string | null;
   errorJobUrl: string | null;
   
-  // Actions
   setUrlStatus: (isHireJobsUrl: boolean, currentUrl: string) => void;
   validateUrl: (url: string) => Promise<void>;
   generateReferral: (url: string) => Promise<void>;
@@ -25,14 +22,12 @@ export interface JobSlice {
   resetJobState: () => void;
 }
 
-// Create the job slice
 export const createJobSlice: StateCreator<
   StoreState,
   [],
   [],
   JobSlice
 > = (set, get, _store) => ({
-  // Initial state
   isHireJobsUrl: false,
   currentUrl: '',
   status: ProcessingStatus.IDLE,
@@ -41,12 +36,10 @@ export const createJobSlice: StateCreator<
   companyName: null,
   errorJobUrl: null,
   
-  // Update URL status
   setUrlStatus: (isHireJobsUrl: boolean, currentUrl: string) => {
     set({ isHireJobsUrl, currentUrl });
   },
   
-  // Validate if a job URL is valid
   validateUrl: async (url: string) => {
     const { getAuthToken, isAuthenticated } = get();
     
@@ -86,7 +79,6 @@ export const createJobSlice: StateCreator<
     }
   },
   
-  // Generate a referral message
   generateReferral: async (url: string) => {
     const { getAuthToken, isAuthenticated, hasGeminiApiKey, selectedTemplateId } = get();
     
@@ -116,7 +108,6 @@ export const createJobSlice: StateCreator<
         payload.templateId = selectedTemplateId;
       }
       
-      // Initiate referral generation
       await axios.post(
         `${API_BASE_URL}/generate-referral`,
         payload,
@@ -129,7 +120,6 @@ export const createJobSlice: StateCreator<
       
       set({ status: ProcessingStatus.FETCHING });
       
-      // Poll for the result
       let attempts = 0;
       const maxAttempts = 10;
       const interval = 1500;
@@ -152,7 +142,6 @@ export const createJobSlice: StateCreator<
             continue;
           }
           
-          // Success - we have the referral message
           set({
             status: ProcessingStatus.COMPLETED,
             referralMessage: result.data.referralMessage,
@@ -182,7 +171,6 @@ export const createJobSlice: StateCreator<
     }
   },
   
-  // Clear cache and retry generating a referral
   clearCacheAndRetry: async (url: string) => {
     const { isAuthenticated, hasGeminiApiKey, clearCache, generateReferral } = get();
     
@@ -222,7 +210,6 @@ export const createJobSlice: StateCreator<
     }
   },
   
-  // Clear the referral cache
   clearCache: async (url: string = 'all') => {
     const { getAuthToken, isAuthenticated } = get();
     
@@ -254,7 +241,6 @@ export const createJobSlice: StateCreator<
     }
   },
   
-  // Reset job state
   resetJobState: () => {
     set({
       status: ProcessingStatus.IDLE,
