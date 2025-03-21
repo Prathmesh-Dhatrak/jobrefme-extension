@@ -1,10 +1,19 @@
 import React from 'react';
+import { useJobProcessing } from '../hooks/useZustandStore';
 
 interface StatusIndicatorProps {
-  isHireJobsUrl: boolean;
+  isHireJobsUrl?: boolean;
+  useStoreValue?: boolean;
 }
 
-const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isHireJobsUrl }) => {
+const StatusIndicator: React.FC<StatusIndicatorProps> = ({ 
+  isHireJobsUrl: propIsHireJobsUrl,
+  useStoreValue = true
+}) => {
+  const { isHireJobsUrl: storeIsHireJobsUrl } = useJobProcessing();
+  
+  const isHireJobsUrl = useStoreValue ? storeIsHireJobsUrl : propIsHireJobsUrl;
+
   const handleVisitHireJobs = () => {
     chrome.tabs.create({ url: 'https://hirejobs.in/' });
   };

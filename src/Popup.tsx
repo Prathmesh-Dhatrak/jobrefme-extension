@@ -1,6 +1,8 @@
 import React from 'react';
-import { useAppContext } from './contexts/AppContext';
 import { ProcessingStatus } from './types';
+import { useAuth, useUser, useJobProcessing, useUI } from './hooks/useZustandStore';
+import { useHireJobsDetection } from './hooks/useHireJobsDetection';
+
 import StatusIndicator from './components/StatusIndicator';
 import GenerateButton from './components/GenerateButton';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -14,24 +16,39 @@ import Loading from './components/Loading';
 import TemplateSelector from './components/TemplateSelector';
 
 const Popup: React.FC = () => {
-  const { state, generateReferral, clearCacheAndRetry, reset, setSelectedTemplate } = useAppContext();
+  const { isAuthenticated, isAuthLoading } = useAuth();
+  const { user } = useUser();
+  const { 
+    isHireJobsUrl, 
+    currentUrl, 
+    status, 
+    referralMessage, 
+    jobTitle, 
+    companyName, 
+    errorJobUrl,
+    generateReferral, 
+    clearCacheAndRetry, 
+    resetJobState 
+  } = useJobProcessing();
+  const { error } = useUI();
+  useHireJobsDetection();
 
   const handleGenerateClick = () => {
-    if (state.isHireJobsUrl && state.currentUrl) {
-      if (state.status === ProcessingStatus.COMPLETED) {
-        reset();
-        generateReferral(state.currentUrl);
+    if (isHireJobsUrl && currentUrl) {
+      if (status === ProcessingStatus.COMPLETED) {
+        resetJobState();
+        generateReferral(currentUrl);
         return;
       }
-      if (state.status === ProcessingStatus.ERROR && state.errorJobUrl) {
-        clearCacheAndRetry(state.errorJobUrl);
+      if (status === ProcessingStatus.ERROR && errorJobUrl) {
+        clearCacheAndRetry(errorJobUrl);
       } else {
-        generateReferral(state.currentUrl);
+        generateReferral(currentUrl);
       }
     }
   };
 
-  if (state.isAuthLoading) {
+  if (isAuthLoading) {
     return (
       <div className="p-4 bg-gray-50" style={{ width: '360px', minHeight: '400px' }}>
         <Loading />
@@ -39,11 +56,11 @@ const Popup: React.FC = () => {
     );
   }
 
-  if (!state.isAuthenticated) {
+  if (!isAuthenticated) {
     return <LoginPage />;
   }
 
-  if (!state.user?.hasGeminiApiKey) {
+  if (!user?.hasGeminiApiKey) {
     return (
       <div className="p-4 bg-gray-50 flex flex-col" style={{ width: '360px', minHeight: '400px' }}>
         <header className="mb-4">
@@ -87,42 +104,34 @@ const Popup: React.FC = () => {
       </header>
 
       <div className="flex-1 flex flex-col">
-        <StatusIndicator isHireJobsUrl={state.isHireJobsUrl} />
+        <StatusIndicator />
 
-        {state.error && (
+        {error && (
           <ErrorDisplay
-            message={state.error}
-            onDismiss={reset}
+            message={error}
+            onDismiss={resetJobState}
           />
         )}
 
-        <LoadingIndicator status={state.status} />
+        <LoadingIndicator status={status} />
 
-        {state.isHireJobsUrl && state.status === ProcessingStatus.IDLE && (
+        {isHireJobsUrl && status === ProcessingStatus.IDLE && (
           <div className="mb-4">
-            <TemplateSelector
-              selectedTemplateId={state.selectedTemplateId}
-              onSelectTemplate={setSelectedTemplate}
-              disabled={state.status !== ProcessingStatus.IDLE}
-            />
+            <TemplateSelector />
           </div>
         )}
 
-        {state.status === ProcessingStatus.COMPLETED && state.referralMessage && (
+        {status === ProcessingStatus.COMPLETED && referralMessage && (
           <ReferralMessage
-            message={state.referralMessage}
-            jobTitle={state.jobTitle || 'Job Position'}
-            companyName={state.companyName || 'Company'}
+            message={referralMessage}
+            jobTitle={jobTitle || 'Job Position'}
+            companyName={companyName || 'Company'}
           />
         )}
       </div>
 
       <div className="mt-auto">
         <GenerateButton
-          status={state.status}
-          isHireJobsUrl={state.isHireJobsUrl}
-          isApiKeyConfigured={Boolean(state.user?.hasGeminiApiKey)}
-          hasErrorJobUrl={Boolean(state.errorJobUrl)}
           onClick={handleGenerateClick}
         />
 

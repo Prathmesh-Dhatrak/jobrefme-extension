@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { useAppContext } from '../contexts/AppContext';
+import { useAuth, useTemplates, useUI } from '../hooks/useZustandStore';
 import { Template } from '../types';
 import Loading from '../components/Loading';
 import TemplatePreview from '../components/TemplatePreview';
 
 const TemplatePage: React.FC = () => {
-  const { state, fetchTemplates, createTemplate, updateTemplate, deleteTemplate } = useAppContext();
+  const { isAuthenticated } = useAuth();
+  const { 
+    templates, 
+    isLoadingTemplates, 
+    fetchTemplates, 
+    createTemplate, 
+    updateTemplate, 
+    deleteTemplate 
+  } = useTemplates();
+  const { error: storeError, setError } = useUI();
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setLocalError] = useState<string | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
@@ -20,33 +30,43 @@ const TemplatePage: React.FC = () => {
   
   const [templatesLoaded, setTemplatesLoaded] = useState(false);
   
+  const setErrorMessage = (message: string | null) => {
+    if (setError) {
+      setError(message);
+    } else {
+      setLocalError(message);
+    }
+  };
+  
+  const errorMessage = storeError || error;
+  
   useEffect(() => {
     const loadTemplates = async () => {
-      if (!state.isLoadingTemplates && state.templates.length === 0 && !templatesLoaded) {
+      if (!isLoadingTemplates && templates.length === 0 && !templatesLoaded) {
         setIsLoading(true);
         setTemplatesLoaded(true);
         
         try {
           await fetchTemplates();
         } catch (error) {
-          setError(error instanceof Error ? error.message : 'Failed to load templates');
+          setErrorMessage(error instanceof Error ? error.message : 'Failed to load templates');
         } finally {
           setIsLoading(false);
         }
       }
     };
 
-    if (state.isAuthenticated) {
+    if (isAuthenticated) {
       loadTemplates();
     }
-  }, [state.isAuthenticated, state.isLoadingTemplates, state.templates.length, fetchTemplates, templatesLoaded]);
+  }, [isAuthenticated, isLoadingTemplates, templates.length, fetchTemplates, templatesLoaded]);
 
   useEffect(() => {
-    if (state.templates.length > 0 && !activeTemplate && !state.isLoadingTemplates && !isLoading) {
-      const defaultTemplate = state.templates.find(t => t.isDefault);
-      setActiveTemplate(defaultTemplate || state.templates[0]);
+    if (templates.length > 0 && !activeTemplate && !isLoadingTemplates && !isLoading) {
+      const defaultTemplate = templates.find(t => t.isDefault);
+      setActiveTemplate(defaultTemplate || templates[0]);
     }
-  }, [state.templates, activeTemplate, state.isLoadingTemplates, isLoading]);
+  }, [templates, activeTemplate, isLoadingTemplates, isLoading]);
 
   const handleEditClick = (template: Template) => {
     setEditingTemplate(template);
@@ -89,7 +109,7 @@ const TemplatePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setErrorMessage(null);
     setIsLoading(true);
 
     try {
@@ -106,7 +126,7 @@ const TemplatePage: React.FC = () => {
       }
       setView('list');
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to save template');
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to save template');
     } finally {
       setIsLoading(false);
     }
@@ -118,17 +138,17 @@ const TemplatePage: React.FC = () => {
       try {
         await deleteTemplate(id);
         if (activeTemplate && activeTemplate._id === id) {
-          setActiveTemplate(state.templates.find(t => t._id !== id) || null);
+          setActiveTemplate(templates.find(t => t._id !== id) || null);
         }
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to delete template');
+        setErrorMessage(error instanceof Error ? error.message : 'Failed to delete template');
       } finally {
         setIsLoading(false);
       }
     }
   };
 
-  if (!state.isAuthenticated) {
+  if (!isAuthenticated) {
     return (
       <div className="p-4">
         <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-700">
@@ -138,7 +158,7 @@ const TemplatePage: React.FC = () => {
     );
   }
 
-  const isTemplatesLoading = isLoading || state.isLoadingTemplates;
+  const isTemplatesLoading = isLoading || isLoadingTemplates;
 
   const renderTemplateList = () => (
     <>
@@ -161,9 +181,9 @@ const TemplatePage: React.FC = () => {
         and {'{skills}'} which will be replaced with actual job information.
       </p>
 
-      {error && (
+      {errorMessage && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
+          {errorMessage}
         </div>
       )}
       
@@ -171,7 +191,7 @@ const TemplatePage: React.FC = () => {
         <div className="py-12 flex justify-center">
           <Loading />
         </div>
-      ) : state.templates.length === 0 ? (
+      ) : templates.length === 0 ? (
         <div className="bg-gray-50 p-8 rounded-lg border border-gray-200 text-center">
           <div className="mb-4">
             <svg className="w-12 h-12 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -189,7 +209,7 @@ const TemplatePage: React.FC = () => {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
-          {state.templates.map(template => (
+          {templates.map(template => (
             <div 
               key={template._id} 
               className={`bg-white rounded-lg shadow-sm border ${activeTemplate?._id === template._id ? 'border-primary-300 ring-1 ring-primary-300' : 'border-gray-200'} overflow-hidden transition-all hover:shadow-md cursor-pointer`}
@@ -277,9 +297,9 @@ const TemplatePage: React.FC = () => {
         </button>
       </div>
       
-      {error && (
+      {errorMessage && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
+          {errorMessage}
         </div>
       )}
       

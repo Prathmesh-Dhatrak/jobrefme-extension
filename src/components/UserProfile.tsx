@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAppContext } from '../contexts/AppContext';
+import { useAuth, useUser } from '../hooks/useZustandStore';
 
 const UserProfile: React.FC = () => {
-  const { state, logout } = useAppContext();
+  const { logout } = useAuth();
+  const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -33,11 +34,11 @@ const UserProfile: React.FC = () => {
     };
   }, []);
 
-  if (!state.user) {
+  if (!user) {
     return null;
   }
 
-  const { displayName, profilePicture } = state.user;
+  const { displayName, profilePicture } = user;
   const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
@@ -64,7 +65,7 @@ const UserProfile: React.FC = () => {
           <div className="py-1">
             <div className="px-4 py-2 border-b">
               <p className="text-sm font-medium text-gray-900">{displayName}</p>
-              <p className="text-xs text-gray-500 truncate">{state.user.email}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
             
             <button
