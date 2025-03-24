@@ -1,9 +1,8 @@
 import { StateCreator } from 'zustand';
-import axios from 'axios';
 import { StoreState } from './index';
 import { UserState } from '../types';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { api } from '../services/apiClient';
+import axios from 'axios';
 
 export interface UserSlice {
   user: UserState | null;
@@ -24,8 +23,7 @@ export const createUserSlice: StateCreator<
   hasGeminiApiKey: false,
   
   fetchUserProfile: async () => {
-    const { getAuthToken } = get();
-    const token = getAuthToken();
+    const token = get().getAuthToken();
     
     if (!token) {
       set({ error: 'No authentication token available' });
@@ -33,13 +31,9 @@ export const createUserSlice: StateCreator<
     }
     
     try {
-      const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const { data } = await api.get('/auth/profile');
       
-      const userData = response.data?.data || response.data?.user || response.data;
+      const userData = data?.data || data?.user || data;
       
       if (userData) {
         const userProfile: UserState = {
@@ -74,8 +68,8 @@ export const createUserSlice: StateCreator<
   },
   
   storeGeminiApiKey: async (apiKey: string) => {
-    const { getAuthToken, user } = get();
-    const token = getAuthToken();
+    const token = get().getAuthToken();
+    const user = get().user;
     
     if (!token) {
       set({ error: 'Authentication required' });
@@ -83,15 +77,7 @@ export const createUserSlice: StateCreator<
     }
     
     try {
-      const { data } = await axios.post(
-        `${API_BASE_URL}/user/gemini-key`,
-        { apiKey },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const { data } = await api.post('/user/gemini-key', { apiKey });
       
       if (data.success) {
         if (user) {
@@ -115,8 +101,8 @@ export const createUserSlice: StateCreator<
   },
   
   deleteGeminiApiKey: async () => {
-    const { getAuthToken, user } = get();
-    const token = getAuthToken();
+    const token = get().getAuthToken();
+    const user = get().user;
     
     if (!token) {
       set({ error: 'Authentication required' });
@@ -124,11 +110,7 @@ export const createUserSlice: StateCreator<
     }
     
     try {
-      const { data } = await axios.delete(`${API_BASE_URL}/user/gemini-key`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const { data } = await api.delete('/user/gemini-key');
       
       if (data.success) {
         if (user) {

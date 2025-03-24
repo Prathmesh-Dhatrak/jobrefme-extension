@@ -1,9 +1,7 @@
 import { StateCreator } from 'zustand';
-import axios from 'axios';
 import { StoreState } from './index';
 import { Template } from '../types';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { api } from '../services/apiClient';
 
 export interface TemplateSlice {
   templates: Template[];
@@ -30,9 +28,7 @@ export const createTemplateSlice: StateCreator<
   selectedTemplateId: null,
   
   fetchTemplates: async () => {
-    const { getAuthToken, isAuthenticated } = get();
-    
-    if (!isAuthenticated) {
+    if (!get().isAuthenticated) {
       set({ templateError: 'Authentication required. Please log in to continue.' });
       return;
     }
@@ -40,17 +36,9 @@ export const createTemplateSlice: StateCreator<
     try {
       set({ isLoadingTemplates: true, templateError: null });
       
-      const token = getAuthToken();
-      const response = await axios.get(
-        `${API_BASE_URL}/user/templates`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const { data } = await api.get('/user/templates');
       
-      const templates = response.data.data || [];
+      const templates = data.data || [];
       set({ templates });
       
       const { selectedTemplateId } = get();
@@ -73,9 +61,7 @@ export const createTemplateSlice: StateCreator<
   },
   
   createTemplate: async (template: { name: string; content: string; isDefault: boolean }) => {
-    const { getAuthToken, isAuthenticated } = get();
-    
-    if (!isAuthenticated) {
+    if (!get().isAuthenticated) {
       set({ templateError: 'Authentication required. Please log in to continue.' });
       return null;
     }
@@ -83,18 +69,9 @@ export const createTemplateSlice: StateCreator<
     try {
       set({ isLoadingTemplates: true, templateError: null });
       
-      const token = getAuthToken();
-      const response = await axios.post(
-        `${API_BASE_URL}/user/templates`,
-        template,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const { data } = await api.post('/user/templates', template);
       
-      const newTemplate = response.data.data;
+      const newTemplate = data.data;
       
       set(state => {
         const updatedTemplates = [...state.templates];
@@ -124,9 +101,7 @@ export const createTemplateSlice: StateCreator<
   },
 
   updateTemplate: async (id: string, template: { name?: string; content?: string; isDefault?: boolean }) => {
-    const { getAuthToken, isAuthenticated } = get();
-    
-    if (!isAuthenticated) {
+    if (!get().isAuthenticated) {
       set({ templateError: 'Authentication required. Please log in to continue.' });
       return null;
     }
@@ -134,18 +109,9 @@ export const createTemplateSlice: StateCreator<
     try {
       set({ isLoadingTemplates: true, templateError: null });
       
-      const token = getAuthToken();
-      const response = await axios.put(
-        `${API_BASE_URL}/user/templates/${id}`,
-        template,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const { data } = await api.put(`/user/templates/${id}`, template);
       
-      const updatedTemplate = response.data.data;
+      const updatedTemplate = data.data;
       
       set(state => {
         const updatedTemplates = state.templates.map(t => {
@@ -175,9 +141,7 @@ export const createTemplateSlice: StateCreator<
   },
   
   deleteTemplate: async (id: string) => {
-    const { getAuthToken, isAuthenticated } = get();
-    
-    if (!isAuthenticated) {
+    if (!get().isAuthenticated) {
       set({ templateError: 'Authentication required. Please log in to continue.' });
       return false;
     }
@@ -185,17 +149,9 @@ export const createTemplateSlice: StateCreator<
     try {
       set({ isLoadingTemplates: true, templateError: null });
       
-      const token = getAuthToken();
-      const response = await axios.delete(
-        `${API_BASE_URL}/user/templates/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const { data } = await api.delete(`/user/templates/${id}`);
       
-      if (response.data.success) {
+      if (data.success) {
         set(state => {
           const updatedTemplates = state.templates.filter(t => t._id !== id);
           

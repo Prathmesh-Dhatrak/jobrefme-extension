@@ -62,24 +62,18 @@ export const chromeStorageMiddleware = <T extends StoreState>(
     });
   }
 
-  // Create a new setState function that syncs changes to Chrome storage
   const newSet: typeof set = (updater, replace?) => {
-    // Call the original set function with proper typing for replace
     if (replace === true) {
-      // For the case when replace is explicitly true
       set(updater as any, true);
     } else {
-      // For the case when replace is undefined or false
       set(updater as any, false);
     }
     
-    // After state update, sync relevant parts to Chrome storage
     const currentState = get();
     
     if (typeof chrome !== 'undefined' && chrome.storage) {
       const storageUpdate: Record<string, any> = {};
       
-      // Using type assertion to resolve property access
       const typedState = currentState as unknown as StoreState;
       
       if (typedState.authToken) storageUpdate.authToken = typedState.authToken;
@@ -88,13 +82,11 @@ export const chromeStorageMiddleware = <T extends StoreState>(
       if (typedState.selectedTemplateId) storageUpdate.selectedTemplateId = typedState.selectedTemplateId;
       if (typedState.hasGeminiApiKey !== undefined) storageUpdate.hasGeminiApiKey = typedState.hasGeminiApiKey;
       
-      // Only update storage if we have values to store
       if (Object.keys(storageUpdate).length > 0) {
         chrome.storage.local.set(storageUpdate);
       }
     }
   };
 
-  // Call the original creator function with our wrapped set
   return f(newSet as any, get, api as any);
 };

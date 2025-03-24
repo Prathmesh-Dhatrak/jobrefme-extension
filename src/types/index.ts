@@ -64,39 +64,3 @@ export interface UserState {
   hasGeminiApiKey: boolean;
 }
 
-export interface AppState {
-  isHireJobsUrl: boolean;
-  currentUrl: string;
-  status: ProcessingStatus;
-  error: string | null;
-  referralMessage: string | null;
-  jobTitle: string | null;
-  companyName: string | null;
-  user: UserState | null;
-  isAuthenticated: boolean;
-  isAuthLoading: boolean;
-  errorJobUrl: string | null;
-  templates: Template[];
-  isLoadingTemplates: boolean;
-  templateError: string | null;
-  selectedTemplateId: string | null;
-}
-
-export interface AppContextType {
-  state: AppState;
-  validateUrl: (url: string) => Promise<void>;
-  generateReferral: (url: string) => Promise<void>;
-  clearCacheAndRetry: (url: string) => Promise<void>;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
-  handleAuthCallback: (token: string) => Promise<boolean>;
-  storeGeminiApiKey: (apiKey: string) => Promise<boolean>;
-  deleteGeminiApiKey: () => Promise<boolean>;
-  clearCache: (url?: string) => Promise<boolean>;
-  fetchTemplates: () => Promise<void>;
-  createTemplate: (template: { name: string; content: string; isDefault: boolean }) => Promise<Template | null>;
-  updateTemplate: (id: string, template: { name?: string; content?: string; isDefault?: boolean }) => Promise<Template | null>;
-  deleteTemplate: (id: string) => Promise<boolean>;
-  setSelectedTemplate: (templateId: string | null) => void;
-  reset: () => void;
-}

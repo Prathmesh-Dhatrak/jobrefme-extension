@@ -1,9 +1,7 @@
 import { StateCreator } from 'zustand';
-import axios from 'axios';
 import { StoreState } from './index';
 import { ProcessingStatus } from '../types';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { api } from '../services/apiClient';
 
 export interface JobSlice {
   isHireJobsUrl: boolean;
@@ -41,9 +39,7 @@ export const createJobSlice: StateCreator<
   },
   
   validateUrl: async (url: string) => {
-    const { getAuthToken, isAuthenticated } = get();
-    
-    if (!isAuthenticated) {
+    if (!get().isAuthenticated) {
       set({ 
         status: ProcessingStatus.ERROR,
         error: 'Authentication required. Please log in to continue.'
@@ -54,20 +50,9 @@ export const createJobSlice: StateCreator<
     try {
       set({ status: ProcessingStatus.VALIDATING });
       
-      const token = getAuthToken();
-      const response = await axios.post(
-        `${API_BASE_URL}/validate-job-url`,
-        { jobUrl: url },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const { data } = await api.post('/validate-job-url', { jobUrl: url });
       
-      const validationResult = response.data;
-      
-      if (!validationResult.valid) {
+      if (!data.valid) {
         throw new Error('This job posting URL is not valid or accessible');
       }
       
@@ -80,7 +65,7 @@ export const createJobSlice: StateCreator<
   },
   
   generateReferral: async (url: string) => {
-    const { getAuthToken, isAuthenticated, hasGeminiApiKey, selectedTemplateId } = get();
+    const { isAuthenticated, hasGeminiApiKey, selectedTemplateId } = get();
     
     if (!isAuthenticated) {
       set({
@@ -101,22 +86,13 @@ export const createJobSlice: StateCreator<
     try {
       set({ status: ProcessingStatus.GENERATING });
       
-      const token = getAuthToken();
       const payload: any = { jobUrl: url };
       
       if (selectedTemplateId) {
         payload.templateId = selectedTemplateId;
       }
       
-      await axios.post(
-        `${API_BASE_URL}/generate-referral`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      await api.post('/generate-referral', payload);
       
       set({ status: ProcessingStatus.FETCHING });
       
@@ -126,17 +102,10 @@ export const createJobSlice: StateCreator<
       
       while (attempts < maxAttempts) {
         try {
-          const result = await axios.post(
-            `${API_BASE_URL}/generate-referral/result`,
-            { jobUrl: url },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`
-              }
-            }
-          );
+  
+          const { data } = await api.post('/generate-referral/result', { jobUrl: url });
           
-          if (result.data.status === 'processing') {
+          if (data.status === 'processing') {
             attempts++;
             await new Promise(resolve => setTimeout(resolve, interval));
             continue;
@@ -144,9 +113,9 @@ export const createJobSlice: StateCreator<
           
           set({
             status: ProcessingStatus.COMPLETED,
-            referralMessage: result.data.referralMessage,
-            jobTitle: result.data.jobTitle,
-            companyName: result.data.companyName
+            referralMessage: data.referralMessage,
+            jobTitle: data.jobTitle,
+            companyName: data.companyName
           });
           
           return;
@@ -211,9 +180,7 @@ export const createJobSlice: StateCreator<
   },
   
   clearCache: async (url: string = 'all') => {
-    const { getAuthToken, isAuthenticated } = get();
-    
-    if (!isAuthenticated) {
+    if (!get().isAuthenticated) {
       set({
         error: 'Authentication required. Please log in to continue.'
       });
@@ -221,18 +188,9 @@ export const createJobSlice: StateCreator<
     }
     
     try {
-      const token = getAuthToken();
-      const response = await axios.post(
-        `${API_BASE_URL}/clear-cache`,
-        { jobUrl: url },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const { data } = await api.post('/clear-cache', { jobUrl: url });
       
-      return response.data.success;
+      return data.success;
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to clear cache'

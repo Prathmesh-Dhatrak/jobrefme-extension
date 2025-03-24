@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
-import axios from 'axios';
 import { StoreState } from './index';
 import { UserState } from '../types';
+import { api } from '../services/apiClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -72,13 +72,13 @@ export const createAuthSlice: StateCreator<
         isAuthenticated: true
       });
       
-      const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
+      const { data } = await api.get('/auth/profile', {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
       
-      const userData = response.data?.data || response.data?.user || response.data;
+      const userData = data?.data || data?.user || data;
       
       if (userData) {
         const userProfile: UserState = {
