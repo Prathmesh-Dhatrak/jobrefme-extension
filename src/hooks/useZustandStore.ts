@@ -28,10 +28,16 @@ export const useJobProcessing = () => {
   const jobTitle = useStore(state => state.jobTitle);
   const companyName = useStore(state => state.companyName);
   const errorJobUrl = useStore(state => state.errorJobUrl);
+  const selectedJobContent = useStore(state => state.selectedJobContent);
   
   const validateUrl = useStore(state => state.validateUrl);
   const generateReferral = useStore(state => state.generateReferral);
+  const generateReferralFromContent = useStore(state => state.generateReferralFromContent);
   const clearCacheAndRetry = useStore(state => state.clearCacheAndRetry);
+  const clearCacheAndRetryForContent = useStore(state => state.clearCacheAndRetryForContent);
+  const clearCacheForContent = useStore(state => state.clearCacheForContent);
+  const checkForSelectedContent = useStore(state => state.checkForSelectedContent);
+  const clearSelectedContent = useStore(state => state.clearSelectedContent);
   const resetJobState = useStore(state => state.resetJobState);
   
   return {
@@ -42,9 +48,15 @@ export const useJobProcessing = () => {
     jobTitle,
     companyName,
     errorJobUrl,
+    selectedJobContent,
     validateUrl,
     generateReferral,
+    generateReferralFromContent,
     clearCacheAndRetry,
+    clearCacheAndRetryForContent,
+    clearCacheForContent,
+    checkForSelectedContent,
+    clearSelectedContent,
     resetJobState
   };
 };

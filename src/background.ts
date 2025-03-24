@@ -4,11 +4,24 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
     console.log('JobRefMe: Extension installed, opening welcome page');
     
+    chrome.contextMenus.create({
+      id: 'generateReferralFromContent',
+      title: 'Generate Referral from Selected Content',
+      contexts: ['selection']
+    });
+    
     chrome.tabs.create({
       url: chrome.runtime.getURL('welcome.html'),
     });
   } else if (details.reason === 'update') {
     console.log('JobRefMe: Extension updated');
+    
+    chrome.contextMenus.create({
+      id: 'generateReferralFromContent',
+      title: 'Generate Referral from Selected Content',
+      contexts: ['selection']
+    });
+    
     const state = getStoreState();
     const hasValidToken = state.checkAuthStatus();
     
@@ -17,6 +30,19 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         url: chrome.runtime.getURL('welcome.html'),
       });
     }
+  }
+});
+
+chrome.contextMenus.onClicked.addListener((info, _tab) => {
+  if (info.menuItemId === 'generateReferralFromContent' && info.selectionText) {
+    console.log('JobRefMe: Selected text for referral generation', info.selectionText.substring(0, 100) + '...');
+    
+    chrome.storage.local.set({
+      'selectedJobContent': info.selectionText,
+      'selectedJobContentTimestamp': Date.now()
+    });
+    
+    chrome.action.openPopup();
   }
 });
 

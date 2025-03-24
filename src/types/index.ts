@@ -40,6 +40,19 @@ export interface ReferralResultResponse {
   usingStoredApiKey?: boolean;
 }
 
+export interface ReferralContentResponse {
+  success: boolean;
+  referralMessage: string;
+  jobTitle: string;
+  companyName: string;
+  jobId: string;
+  processingTime?: number;
+  cached: boolean;
+  cachedAt?: number;
+  isAuthenticated?: boolean;
+  usingStoredApiKey?: boolean;
+}
+
 export interface ErrorResponse {
   success: false;
   error: string;

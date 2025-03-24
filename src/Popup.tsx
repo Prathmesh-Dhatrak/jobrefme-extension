@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ProcessingStatus } from './types';
 import { useAuth, useUser, useJobProcessing, useUI } from './hooks/useZustandStore';
 import { useHireJobsDetection } from './hooks/useHireJobsDetection';
@@ -26,14 +26,41 @@ const Popup: React.FC = () => {
     jobTitle, 
     companyName, 
     errorJobUrl,
+    selectedJobContent,
     generateReferral, 
+    generateReferralFromContent,
     clearCacheAndRetry, 
-    resetJobState 
+    resetJobState,
+    checkForSelectedContent,
+    clearSelectedContent
   } = useJobProcessing();
   const { error } = useUI();
   useHireJobsDetection();
 
+  useEffect(() => {
+    const checkContent = async () => {
+      if (isAuthenticated && user?.hasGeminiApiKey) {
+        const hasContent = await checkForSelectedContent();
+        if (hasContent && selectedJobContent && status === ProcessingStatus.IDLE) {
+          generateReferralFromContent(selectedJobContent);
+        }
+      }
+    };
+    
+    checkContent();
+  }, [isAuthenticated, user?.hasGeminiApiKey, checkForSelectedContent, generateReferralFromContent, selectedJobContent, status]);
+
   const handleGenerateClick = () => {
+    if (selectedJobContent) {
+      if (status === ProcessingStatus.COMPLETED) {
+        resetJobState();
+        generateReferralFromContent(selectedJobContent);
+      } else {
+        generateReferralFromContent(selectedJobContent);
+      }
+      return;
+    }
+    
     if (isHireJobsUrl && currentUrl) {
       if (status === ProcessingStatus.COMPLETED) {
         resetJobState();
@@ -47,6 +74,18 @@ const Popup: React.FC = () => {
       }
     }
   };
+  
+  useEffect(() => {
+    if (status === ProcessingStatus.COMPLETED) {
+      clearSelectedContent();
+    }
+    
+    return () => {
+      if (status !== ProcessingStatus.GENERATING && status !== ProcessingStatus.FETCHING) {
+        clearSelectedContent();
+      }
+    };
+  }, [status, clearSelectedContent]);
 
   if (isAuthLoading) {
     return (
@@ -104,7 +143,7 @@ const Popup: React.FC = () => {
       </header>
 
       <div className="flex-1 flex flex-col">
-        <StatusIndicator />
+        <StatusIndicator hasSelectedContent={!!selectedJobContent} />
 
         {error && (
           <ErrorDisplay
@@ -115,7 +154,7 @@ const Popup: React.FC = () => {
 
         <LoadingIndicator status={status} />
 
-        {isHireJobsUrl && status === ProcessingStatus.IDLE && (
+        {isHireJobsUrl && !selectedJobContent && status === ProcessingStatus.IDLE && (
           <div className="mb-4">
             <TemplateSelector />
           </div>

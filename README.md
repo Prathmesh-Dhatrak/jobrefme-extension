@@ -4,13 +4,16 @@
 
 # JobRefMe Chrome Extension
 
-A Chrome extension that generates personalized referral request messages for HireJobs.in job postings using Google's Gemini AI.
+A Chrome extension that generates personalized referral request messages for job postings using Google's Gemini AI.
 
 ## Features
 
-- **Automatic Detection**: Automatically detects when you're on a HireJobs job posting page
+- **Two Referral Generation Methods**:
+  1. **HireJobs.in Integration**: Automatically detect and generate referrals from job postings
+  2. **Universal Content Selection**: Generate referrals from job descriptions on any website
+
 - **AI-Powered Generation**: Uses Google's Gemini AI to create tailored referral messages
-- **Relevant Skills Highlighting**: Identifies and emphasizes skills from the job posting that match your profile
+- **Relevant Skills Highlighting**: Identifies and emphasizes skills from the job posting
 - **One-Click Copy**: Easily copy the generated message with one click
 - **Personalized Messages**: Each message is customized to the specific job and company
 
@@ -64,6 +67,8 @@ You can update your API key at any time through the extension's options page:
 
 ## Usage
 
+### Method 1: HireJobs.in Job Postings
+
 1. Navigate to a job posting on HireJobs.in (e.g., https://hirejobs.in/jobs/abc123)
 2. Click on the JobRefMe extension icon in your browser toolbar
 3. Click the "Generate Referral Request" button
@@ -71,9 +76,19 @@ You can update your API key at any time through the extension's options page:
 5. Once generated, click "Copy" to copy the message to your clipboard
 6. Use the message in your emails or messages to request a referral
 
+### Method 2: Content Selection on Any Website
+
+1. On any job posting website, select the job description text
+2. Right-click on the selected text
+3. Choose "Generate Referral from Selected Content" from the context menu
+4. In the JobRefMe popup, click "Generate Referral Request"
+5. Wait for the AI to generate a personalized message
+6. Click "Copy" to copy the message to your clipboard
+7. Use the message to request a referral
+
 ## How It Works
 
-JobRefMe extracts key information from the job posting, including:
+JobRefMe uses advanced AI to extract key information from job postings, including:
 - Job title
 - Company name
 - Required skills and qualifications

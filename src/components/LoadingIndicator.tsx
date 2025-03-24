@@ -1,18 +1,26 @@
 import React from 'react';
 import { ProcessingStatus } from '../types';
+import { useJobProcessing } from '../hooks/useZustandStore';
 
 interface LoadingIndicatorProps {
   status: ProcessingStatus;
 }
 
 const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ status }) => {
+  const { selectedJobContent } = useJobProcessing();
+  const isContentBased = !!selectedJobContent;
+
   if (status === ProcessingStatus.IDLE || status === ProcessingStatus.COMPLETED || status === ProcessingStatus.ERROR) {
     return null;
   }
 
   const messages = {
-    [ProcessingStatus.VALIDATING]: 'Validating URL...',
-    [ProcessingStatus.GENERATING]: 'Generating referral...',
+    [ProcessingStatus.VALIDATING]: isContentBased 
+      ? 'Preparing selected content...' 
+      : 'Validating URL...',
+    [ProcessingStatus.GENERATING]: isContentBased 
+      ? 'Generating referral from content...' 
+      : 'Generating referral...',
     [ProcessingStatus.FETCHING]: 'Retrieving message...',
   };
 

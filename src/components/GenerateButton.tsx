@@ -19,25 +19,34 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
   onClick,
   useStoreValues = true
 }) => {
-  const { status: storeStatus, isHireJobsUrl: storeIsHireJobsUrl, errorJobUrl } = useJobProcessing();
+  const { 
+    status: storeStatus, 
+    isHireJobsUrl: storeIsHireJobsUrl, 
+    errorJobUrl,
+    selectedJobContent 
+  } = useJobProcessing();
   const { hasGeminiApiKey } = useUser();
   
   const status = useStoreValues ? storeStatus : propStatus || ProcessingStatus.IDLE;
   const isHireJobsUrl = useStoreValues ? storeIsHireJobsUrl : propIsHireJobsUrl || false;
   const isApiKeyConfigured = useStoreValues ? hasGeminiApiKey : propIsApiKeyConfigured || false;
   const hasErrorJobUrl = useStoreValues ? Boolean(errorJobUrl) : propHasErrorJobUrl || false;
+  const hasContent = !!selectedJobContent;
   
   const isLoading = status === ProcessingStatus.VALIDATING || 
                    status === ProcessingStatus.GENERATING || 
                    status === ProcessingStatus.FETCHING;
   
-  const isDisabled = !isHireJobsUrl || isLoading || !isApiKeyConfigured;
+  const isDisabled = (!isHireJobsUrl && !hasContent) || isLoading || !isApiKeyConfigured;
   
-  let buttonText = "Generate Referral Request";
+  let buttonText = hasContent ? "Generate from Selected Content" : "Generate Referral Request";
+  
   if (status === ProcessingStatus.COMPLETED) {
     buttonText = "Generate New Referral";
   } else if (status === ProcessingStatus.ERROR && hasErrorJobUrl) {
     buttonText = "Try with Clear Cache";
+  } else if (status === ProcessingStatus.ERROR && hasContent) {
+    buttonText = "Try Again with Selected Content";
   } else if (!isApiKeyConfigured) {
     buttonText = "API Key Required";
   }
@@ -49,7 +58,7 @@ const GenerateButton: React.FC<GenerateButtonProps> = ({
       className={`w-full px-4 py-2 rounded-md font-medium transition-colors ${
         isDisabled
           ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-          : status === ProcessingStatus.ERROR && hasErrorJobUrl
+          : status === ProcessingStatus.ERROR && (hasErrorJobUrl || hasContent)
             ? 'bg-blue-600 text-white hover:bg-blue-700'
             : 'bg-primary-600 text-white hover:bg-primary-700'
       }`}

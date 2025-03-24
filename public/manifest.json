@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "JobRefMe - Referral Request Generator",
-  "description": "Generate personalized job referral request messages from HireJobs.in postings",
+  "description": "Generate personalized job referral request messages from any job posting or HireJobs.in",
   "version": "1.0.0",
   "icons": {
     "16": "icon-16.png",
@@ -21,7 +21,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   "host_permissions": [
     "https://hirejobs.in/*",

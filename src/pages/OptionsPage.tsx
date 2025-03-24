@@ -19,7 +19,7 @@ const OptionsPage: React.FC = () => {
   const { user, deleteGeminiApiKey } = useUser();
   const { clearCache } = useCache();
   const { setSuccessMessage, successMessage } = useUI();
-  
+
   const [activeTab, setActiveTab] = useState<SettingsTab>(SettingsTab.API_KEY);
   const [isClearing, setIsClearing] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
@@ -31,10 +31,10 @@ const OptionsPage: React.FC = () => {
       try {
         const data = await chrome.storage.local.get('optionsReloadTimestamp');
         const reloadTimestamp = data.optionsReloadTimestamp;
-        
+
         const currentTime = Date.now();
         const reloadNeeded = !reloadTimestamp || (currentTime - reloadTimestamp > 60000);
-        
+
         if (reloadNeeded && !reloadAttempted && !isAuthLoading) {
           await chrome.storage.local.set({ optionsReloadTimestamp: currentTime });
           setReloadAttempted(true);
@@ -378,17 +378,30 @@ const OptionsPage: React.FC = () => {
 
                   <div className="mb-6">
                     <p className="text-sm text-gray-600 mb-3">
-                      JobRefMe helps you create personalized referral request messages for job postings on HireJobs.in.
-                      It uses Google's Gemini AI to craft tailored messages that highlight your skills and experience.
+                      JobRefMe helps you create personalized referral request messages for jobs. It uses Google's Gemini AI to craft tailored messages that highlight your skills and experience.
                     </p>
 
-                    <h3 className="text-md font-medium mt-4 mb-2">How to use JobRefMe:</h3>
-                    <ol className="text-sm text-gray-700 list-decimal pl-5 space-y-2">
-                      <li>Visit a job posting on HireJobs.in</li>
-                      <li>Click the JobRefMe extension icon in your browser toolbar</li>
-                      <li>Click "Generate Referral Request"</li>
-                      <li>Copy the generated message and use it to request a referral</li>
-                    </ol>
+                    <h3 className="text-md font-medium mt-4 mb-2">Two Ways to Generate Referrals:</h3>
+
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-gray-800 mb-2">Option 1: HireJobs.in Integration</h4>
+                      <ol className="text-sm text-gray-700 list-decimal pl-5 space-y-2">
+                        <li>Visit a job posting on HireJobs.in</li>
+                        <li>Click the JobRefMe extension icon in your browser toolbar</li>
+                        <li>Click "Generate Referral Request"</li>
+                        <li>Copy the generated message and use it to request a referral</li>
+                      </ol>
+                    </div>
+
+                    <div className="mb-4">
+                      <h4 className="text-sm font-medium text-gray-800 mb-2">Option 2: Content Selection (works on any site)</h4>
+                      <ol className="text-sm text-gray-700 list-decimal pl-5 space-y-2">
+                        <li>Select job description text on any website</li>
+                        <li>Right-click and choose "Generate Referral from Selected Content"</li>
+                        <li>In the popup, click "Generate from Selected Content"</li>
+                        <li>Copy the generated message and use it to request a referral</li>
+                      </ol>
+                    </div>
                   </div>
 
                   <div className="border-t border-gray-200 pt-6">
@@ -414,7 +427,7 @@ const OptionsPage: React.FC = () => {
 
                   <div className="mt-6 text-xs text-gray-500">
                     <p>Version 1.0.0</p>
-                    <p className="mt-1">Made with ♥ for HireJobs users</p>
+                    <p className="mt-1">Made with ♥ for job seekers</p>
                   </div>
                 </div>
               )}

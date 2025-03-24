@@ -27,7 +27,7 @@ const WelcomePage: React.FC = () => {
           <img src="/icon-128.png" alt="JobRefMe Logo" className="w-20 h-20 mx-auto mb-3" />
           <h1 className="text-2xl font-bold text-gray-900">Welcome to JobRefMe!</h1>
           <p className="text-gray-600 mt-2">
-            Generate personalized referral requests for HireJobs.in job postings
+            Generate personalized referral requests for jobs
           </p>
         </div>
 
@@ -99,9 +99,10 @@ const WelcomePage: React.FC = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-md font-medium mb-2">How to use JobRefMe:</h3>
           <ol className="text-sm text-gray-700 list-decimal pl-5 space-y-1">
-            <li>Visit a job posting on HireJobs.in</li>
-            <li>Click the JobRefMe extension icon</li>
-            <li>Click "Generate Referral Request"</li>
+            <li>Visit a job posting on HireJobs.in or select job text on any website</li>
+            <li>For HireJobs: Click the JobRefMe extension icon</li>
+            <li>For other sites: Select job text, right-click and choose "Generate Referral from Selected Content"</li>
+            <li>Click "Generate" to create a personalized referral request</li>
             <li>Copy the generated message and use it to request a referral</li>
           </ol>
         </div>
